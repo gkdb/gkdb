@@ -188,7 +188,23 @@ Note that the expression above assumes that the \texttt{freq\_override} option i
 \subsection{Debye length}
 Always zero in GKW runs.
 
+\section{Wave vector}
+\subsection{Radial wave vector}
+\begin{equation}
+\left. k_{r*}\rho_\tref\right.^\gkdb = \texttt{krrho}\cdot\frac{1}{\rho_\textrm{rat}}\cdot\sqrt{\frac{g^{\psi\psi}(\theta=0)}{g^{\psi\psi}(s=0)}}
+\end{equation}
+The quantity $g^{\psi \psi}$ is given on the $s$ grid in \texttt{geom.dat}
+
+\subsection{Binormal wave vector}
+\begin{equation}
+\left. k_{\theta*}\rho_\tref\right.^\gkdb = \texttt{kthrho}\cdot\frac{1}{\rho_\textrm{rat}}\cdot\sqrt{\frac{g^{\zeta\zeta}(\theta=0)}{g^{\zeta\zeta}(s=0)}}
+\end{equation}
+The quantity $g^{\zeta \zeta}$ is given on the $s$ grid in \texttt{geom.dat}
+
+
 \chapter{Outputs}
+
+
 
 \bibliographystyle{unsrt}
 \bibliography{gkw2gkdb}
