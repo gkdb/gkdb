@@ -22,7 +22,9 @@
 
 function [out,is_ok,ok_msg]=gkw2json(flnm,proj,flpth_json,comments,N_shape,flpth_hamada)
 
-
+disp('To do: 1) change nrat definition to include centrifugal correction 2) use nrat and Trat in beta transformation')
+disp('3) also use qrat, nrat, Trat for collisionality calculation')
+return
 
 % defaults
 if ~exist('flnm')||isempty(flnm)
@@ -417,7 +419,8 @@ for iN=1:Nout % loop over output files
     Imid = find(Ggeom{ii}.s_grid>-0.5 & Ggeom{ii}.s_grid<0.5 & Ggeom{ii}.r.*Rrat>1);    
     nefac_th0=interpos(Ggeom{ii}.z(Imid).*Rrat,cfdens(Imid,Iele+1+nsp),Z0,0.); 
     out{iN}.species_global.collisionality = out{iN}.species_global.collisionality.*nefac_th0;
-    nrat = nrat.*nefac_th0;
+    nrat = nrat.*nefac_th0; 
+   disp('Warning: to check, should likely be nrat/nefac_th0')
     for jj=1:nsp % loop over species
       nsfac_th0 = interpos(Ggeom{ii}.z(Imid).*Rrat,cfdens(Imid,jj+1+nsp),Z0,0.);   % interpolation at Z=Z0 (theta=0)
       out{iN}.species{jj}.density = out{iN}.species{jj}.density.*nsfac_th0./nefac_th0; %correction needed if theta<>0 at s=0 + CF effects
