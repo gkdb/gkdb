@@ -87,3 +87,11 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# Various
+.aux
+.blg
+.out
+.synctex.gz
+.toc
+

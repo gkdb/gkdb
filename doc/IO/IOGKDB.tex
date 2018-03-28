@@ -3,14 +3,16 @@
 \newcommand{\vthref}{\ensuremath{v_\textrm{thref}}}
 
 
-\documentclass[fleqn]{report}
+\documentclass[a4paper]{report}
 \usepackage{fullpage}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{bm}
 \usepackage{graphicx}
 \usepackage{tabularx}
+\usepackage{hyperref}
 
+\hypersetup{bookmarks, plainpages=false, colorlinks=true, pdfborder={0 0 0 0}, linkcolor=blue, citecolor=blue, urlcolor=blue, pdftitle={GKDB documentation}}
 \newcolumntype{Y}{>{\centering\arraybackslash}X}
 \newcolumntype{R}{>{\hsize=0.4\hsize}Y}
 \newcolumntype{S}{>{\hsize=0.6\hsize}Y}
@@ -19,7 +21,7 @@
 
 \begin{document}
 
-\title{Documentation of the linear gyrokinetic database GKDB}
+\title{Documentation of the  gyrokinetic database GKDB}
 
 \author{Y. Camenen on behalf of the GKDB working group}
 
@@ -34,7 +36,7 @@ This document summarises the names, conventions and normalisations adopted for t
 The normalised inputs and outputs are independent of $\rho^*$ consistently with the local approximation and a spectral representation is assumed in the perpendicular plane (i.e. homogeneous turbulence).\\
 S.I. units are used everywhere with the exception of temperatures given in eV. This means that $kT$ is noted $T$ as is customary in plasma physics (and possibly confusing).
 
-
+\tableofcontents
 
 \chapter{Conventions and normalisations}
 \label{chap:normdef}
@@ -57,7 +59,7 @@ A right handed flux coordinate system $(r,\theta,\varphi)$ is now introduced.
 To start with, a reference point $(R_0,Z_0)$ is defined for the flux surface of interest $\{R_{\Psi_0},Z_{\Psi_0}\}$:
 \begin{eqnarray}
  R_0 &=& \frac{1}{2}\left[\max[R_{\Psi_0}] + \min[R_{\Psi_0}]\right]\\
- Z_0 &=& \frac{1}{2}\left[\max[Z_{\Psi_0}] + \min[Z_{\Psi_0}]\right]\\
+ Z_0 &=& \frac{1}{2}\left[\max[Z_{\Psi_0}] + \min[Z_{\Psi_0}]\right]
 \end{eqnarray} 
 The reference point  $(R_0,Z_0)$ will be used in the following to define the poloidal angle. Note that $(R_0,Z_0)$ is not the position of the magnetic axis, although it can be in some particular cases. 
 
@@ -204,7 +206,7 @@ is not allowed in the database as it is inconsistent with the use of a finite pr
 \subsection{Plasma shape}
 A general description of local magnetic equilibria particularly convenient for gyrokinetic codes was introduced by J. Candy in \cite {Candy:PPCF2009}. It is used in the GKDB with a few minor modifications.
 The plasma shape is described by specifying the distance of the constant poloidal flux contours to the reference point $(R_0,Z_0)$  normalised to $L_\tref$:
-$$ a_N(r,\theta) = \frac{1}{L_\tref}\sqrt{\left[R_{\Psi}(r,\theta)-R_0\right]^2 + \left[Z_{\Psi}(r,\theta)-Z_0\right]^2} $$
+$$ a_N(r,\theta) = \frac{1}{L_\tref}\sqrt{\left[R_{\Psi_0}(r,\theta)-R_0\right]^2 + \left[Z_{\Psi_0}(r,\theta)-Z_0\right]^2} $$
 To allow regressions in the database the flux surface contours are parametrised as 
 $$ a_N(r,\theta) = \sum_{n=0}^{N_{sh}} c_n \cos(n\theta) + s_n \sin(n\theta) $$
 The specification of the local magnetic equilibrium then requires $4N_{sh}+2$ terms, given at $r=r_0$, where $N_{sh}$ is the degree of the expansion: $\{c_n,s_n,\frac{\partial c_n}{\partial r_N},\frac{\partial s_n}{\partial r_N}\}$. Typically $N_{sh}\leq8$ is sufficient to capture most of the plasma shapes but higher values can be used when needed.
