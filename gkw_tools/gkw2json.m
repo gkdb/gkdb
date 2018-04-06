@@ -24,7 +24,7 @@ function [out,is_ok,ok_msg]=gkw2json(flnm,proj,flpth_json,comments,N_shape,flpth
 
 disp('To do: 1) change nrat definition to include centrifugal correction 2) use nrat and Trat in beta transformation')
 disp('3) also use qrat, nrat, Trat for collisionality calculation')
-return
+%return
 
 % defaults
 if ~exist('flnm')||isempty(flnm)
@@ -526,8 +526,14 @@ for iN=1:Nout % loop over output files
      bpar_gkdb=bpar_gkdb.*rotate;
    end
  end
+keyboard
+ amp_gkw = sqrt(trapz(Ggeom{ii}.s_grid,abs(phi_gkw).^2+abs(apar_gkw).^2+abs(bpar_gkw).^2));% ./(Ggeom{ii}.s_grid(end)-Ggeom{ii}.s_grid(1)));
 
- amp_gkw = sqrt(trapz(Ggeom{ii}.s_grid,abs(phi_gkw).^2+abs(apar_gkw).^2+abs(bpar_gkw).^2)./(Ggeom{ii}.s_grid(end)-Ggeom{ii}.s_grid(1)));
+ ds=Ggeom{ii}.s_grid(2)-Ggeom{ii}.s_grid(1));
+
+ amp_gkw = sqrt(sum(abs(phi_gkw).^2+abs(apar_gkw).^2+abs(bpar_gkw).^2).*ds) %-> this is equal to nperiod
+
+
  amp_gkdb = sqrt(trapz(th_final,abs(phi_gkdb).^2+abs(apar_gkdb).^2+abs(bpar_gkdb).^2))./(2*pi);
  amp_rat = amp_gkw./amp_gkdb;
 
