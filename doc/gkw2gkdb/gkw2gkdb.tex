@@ -230,7 +230,41 @@ and the ratio of the GKDB to GKW mode amplitudes is therefore given by:
 The mode amplitude ratio can therefore be computed from the GKW output file \texttt{parallel.dat} which contains $\hat{\phi}_{NN}^\gkw(s)$, $\hat{A_\parallel}_{NN}^\gkw(s)$ and $\hat{B_\parallel}_{NN}^\gkw(s)$. Note that in this file, the fields may have been rotated in the complex plane, but this does not impact the mode amplitude calculation.
 
 \section{Mode growth rate and frequency}
+\begin{equation}
+\gamma_N^\gkdb= \gamma_N^\gkw \cdot \frac{v_\textrm{thrat}}{R_\textrm{thrat}} \qquad\qquad \textrm{and}
+\qquad \qquad \omega_{rN}^\gkdb= \omega_{rN}^\gkw \cdot \frac{v_\textrm{thrat}}{R_\textrm{thrat}}
+\end{equation}
+The tolerance on the mode growth rate convergence can be computed directly from the values of $\gamma_N^\gkw(t)$ stored in the GKW output file \texttt{time.dat}.
 
+\section{Fluxes}
+\begin{align}
+\Gamma_{Ns}^\gkdb &= \Gamma_{Ns}^\gkw \cdot \mathcal{A}_\textrm{rat}^2\frac{v_\textrm{thrat}\rho_\textrm{rat}^2}{R_\textrm{rat}^2}\frac{n_{sN}^\gkw(s=0)}{n_{sN}^\gkw(\theta=0)}\\
+\Pi_{Ns}^\gkdb &= \Pi_{Ns}^\gkw \cdot \mathcal{A}_\textrm{rat}^2\frac{m_\textrm{rat}v_\textrm{thrat}^2\rho_\textrm{rat}^2}{R_\textrm{rat}}\frac{n_{sN}^\gkw(s=0)}{n_{sN}^\gkw(\theta=0)}\sqrt{2T_{sN}^\gkw m_{sN}^\gkw}\\
+Q_{Ns}^\gkdb &= Q_{Ns}^\gkw \cdot \mathcal{A}_\textrm{rat}^2\frac{v_\textrm{thrat}T_\textrm{rat}\rho_\textrm{rat}^2}{R_\textrm{rat}^2}\frac{n_{sN}^\gkw(s=0)}{n_{sN}^\gkw(\theta=0)}T_{sN}^\gkw
+\end{align}
+where $\Gamma_{Ns}^\gkw$, $\Pi_{Ns}^\gkw$ and $Q_{Ns}^\gkw$ are the entries \texttt{pflux}, \texttt{vflux} and \texttt{eflux} in the GKW output file \texttt{fluxes.dat}.
+
+TO DO: add a comment on where to find the Laboratory frame fluxes and conversion gyro-center fluxes to particle fluxes
+  
+\section{Parallel mode structure}  
+\subsection{Fields}
+\begin{align}
+\phi_{Nf}^\gkdb &= \hat{\phi}_{NN}^\gkw\cdot \mathcal{A}_\textrm{rat}\frac{T_\textrm{rat}\rho_\textrm{rat}}{q_\textrm{rat}R_\textrm{rat}}\cdot \textrm{e}^{i\alpha}\\
+A_{\parallel Nf}^\gkdb &= \hat{A}_{\parallel NN}^\gkw\cdot \mathcal{A}_\textrm{rat}\frac{B_\textrm{rat}\rho_\textrm{rat}^2}{R_\textrm{rat}}\cdot \textrm{e}^{i\alpha}\\
+B_{\parallel Nf}^\gkdb &= \hat{B}_{\parallel NN}^\gkw\cdot \mathcal{A}_\textrm{rat}\frac{B_\textrm{rat}\rho_\textrm{rat}}{R_\textrm{rat}}\cdot \textrm{e}^{i\alpha}
+\end{align}
+with
+\begin{equation}
+\textrm{e}^{i\alpha} = \frac{|\hat{\phi}_{NN}^\gkw(\theta=0)|}{\hat{\phi}_{NN}^\gkw(\theta=0)}
+\end{equation}
+
+\subsection{Moments of the distribution function}
+\begin{align}
+\delta n_{sN}^\gkdb & = \delta n_{sN}^\gkw \cdot \mathcal{A}_\textrm{rat}  \frac{\rho_\textrm{rat}}{R_\textrm{rat}}\frac{n_{sN}^\gkw(s=0)}{n_{sN}^\gkw(\theta=0)} \\
+\delta v_{\parallel sN}^\gkdb & =  \delta n_{sN}^\gkw\cdot \mathcal{A}_\textrm{rat}  \frac{\rho_\textrm{rat}}{R_\textrm{rat}}\sqrt{\frac{T_\textrm{rat}}{m_\textrm{rat}}} \frac{n_{sN}^\gkw(s=0)}{n_{sN}^\gkw(\theta=0)}\sqrt{\frac{T_{sN}^\gkw }{m_{sN}^\gkw }}\\
+\delta T_{\perp sN}^\gkdb & =  \delta n_{sN}^\gkw\cdot \mathcal{A}_\textrm{rat}  \frac{\rho_\textrm{rat}}{R_\textrm{rat}}T_\textrm{rat}\frac{n_{sN}^\gkw(s=0)}{n_{sN}^\gkw(\theta=0)}T_{sN}^\gkw\\
+\delta T_{\parallel sN}^\gkdb & =  \delta n_{sN}^\gkw\cdot \mathcal{A}_\textrm{rat}  \frac{\rho_\textrm{rat}}{R_\textrm{rat}}T_\textrm{rat}\frac{n_{sN}^\gkw(s=0)}{n_{sN}^\gkw(\theta=0)}T_{sN}^\gkw
+\end{align}
 
 \bibliographystyle{unsrt}
 \bibliography{gkw2gkdb}
