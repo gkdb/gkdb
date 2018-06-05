@@ -12,24 +12,24 @@
 \usepackage{graphicx}
 \usepackage{tabularx}
 \usepackage{hyperref}
-
-\hypersetup{bookmarks, plainpages=false, colorlinks=true, pdfborder={0 0 0 0}, linkcolor=blue, citecolor=blue, urlcolor=blue, pdftitle={GKDB documentation}}
+\hypersetup{plainpages=false, colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue, pdftitle={GKDB documentation}}
 
 \begin{document}
 
-\title{Documentation of the GKW to GKDB data conversion}
+\title{GKW to GKDB data conversion}
 
 \author{Y. Camenen on behalf of the GKDB working group}
 
-\date{Last update: February 9, 2018}
+\date{Last update: June 4, 2018}
 
 \maketitle
 
-\chapter{Preamble}
-This document describes how to transform inputs and outputs from a GKW flux-tube simulation to match the format used in the GyroKinetic DataBase (GKDB). \\ 
-The reader is assumed to have some knowledge of GKW and to have read the documentation of the GKDB.
 
 \tableofcontents
+
+\chapter{Preamble}
+This document describes how to transform inputs and outputs from a GKW flux-tube simulation to match the format used in the GyroKinetic DataBase (GKDB). \\ 
+The reader is assumed to have some knowledge of GKW \cite{Peeters:CPC09,GKW:wiki} and to have read the documentation of the GKDB \cite{GKDB:wiki}. The structure of the present document follows that of the GKDB documentation.
 
 \chapter{Conventions and normalisations}
 
@@ -74,7 +74,7 @@ T_\textrm{rat} &=  \frac{T_\tref^\gkw}{T_\tref^\gkdb} = \frac{1}{\texttt{temp}^\
 n_\textrm{rat} &=  \frac{n_\tref^\gkw}{n_\tref^\gkdb} = \frac{1}{\texttt{dens}^\gkw_{e^-}} \frac{n_e(s=0)}{n_e(\theta=0)} & B_\textrm{rat}^\texttt{chease} &= \frac{B_\tref^\texttt{GKW-chease}}{B_\tref^\gkdb} = \frac{\texttt{B0EXP}}{B_0^\gkdb}
 \end{align*}
 where the $e^-$ subscript denotes the electron species and the electron to deuterium mass ratio is taken to be $\frac{m_e}{m_D}=2.7237 \times 10^{-4}$ in the GKDB.\\
-The reference charge, mass, temperature and density ratio can be computed from the electron species parameters in the \texttt{SPECIES} namelist of the GKW input file. The poloidal asymmetry factor for the density can be computed from data in the \texttt{cfdens} file (GKW output).  With \texttt{chease} geometry, the ratios $ L_\textrm{rat}$ and $ B_\textrm{rat}$ can be computed from data in the \texttt{hamada.dat} file (GKW input).\\
+The reference charge, mass, temperature and density ratio can be computed from the electron species parameters in the \texttt{SPECIES} namelist of the GKW input file. The poloidal asymmetry factor for the electron density can be computed from data in the \texttt{cfdens} file (GKW output).  With \texttt{chease} geometry, the ratios $ R_\textrm{rat}$ and $ B_\textrm{rat}$ can be computed from data in the \texttt{hamada.dat} file (GKW input).\\
 The following derived quantities will also be used for the conversion:
 \begin{align*}
 v_\textrm{thrat} &= \sqrt{\frac{T_\textrm{rat}}{m_\textrm{rat}}} & \rho_\textrm{rat} = \frac{q_\textrm{rat} B_\textrm{rat}}{m_\textrm{rat}v_\textrm{thrat}}
@@ -86,7 +86,7 @@ v_\textrm{thrat} &= \sqrt{\frac{T_\textrm{rat}}{m_\textrm{rat}}} & \rho_\textrm{
 Only \texttt{miller} and \texttt{chease} magnetic equilibrium specifications are compatible with the GKDB format (\texttt{s-alpha} and \texttt{circ} are not an exact solution of the Grad-Shafranov equation).
 \subsection{Flux surface centre}
 Let's call $\{R_{\Psi_0},Z_{\Psi_0}\}$ a set of points discretizing the flux surface of interest.\\
-The values of $\{R_{\Psi_0},Z_{\Psi_0}\}/R_\tref^\gkw$ are available in the \texttt{geom.dat} file (GKW outpout) and can be used to compute $\{R_0^\gkdb,Z_0^\gkdb\}/R_\tref^\gkw$. 
+The values of $\{R_{\Psi_0},Z_{\Psi_0}\}/R_\tref^\gkw$ are available in the \texttt{geom.dat} file (GKW output) and can be used to compute $\{R_0^\gkdb,Z_0^\gkdb\}/R_\tref^\gkw$. 
 
 \subsection{Poloidal angle}
 With these values, one can then compute the GKDB poloidal angle $\theta$:
@@ -143,13 +143,13 @@ m_{sN}^\gkdb = m_{sN}^\gkw \cdot m_\textrm{rat} = \texttt{mass}_s \cdot m_\textr
 
 \subsection{Density}
 \begin{equation}
-n_{sN}^\gkdb(\theta=0) = n_{sN}^\gkw(s=0) \cdot n_\textrm{rat} = \texttt{dens}_s \cdot n_\textrm{rat} 
+n_{sN}^\gkdb(\theta=0) = n_{sN}^\gkw(\theta=0) \cdot n_\textrm{rat} = \texttt{dens}_s \cdot n_\textrm{rat} \cdot \frac{n_{sN}^\gkw(\theta=0)}{n_{sN}^\gkw(s=0)}
 \end{equation}
-Note than $n_\textrm{rat}$ includes the correction due to poloidal asymmetries ($s=0$ not at the same location as $\theta=0$)
+In the presence of poloidal asymmetries, the density at $\theta=0$ can be obtained from the \texttt{cfdens} output file. In this file, the first column is the $s$ grid, then comes the logarithmic density gradient for each species and finally the density for each species (all with GKW normalisations). 
 
 \subsection{Logarithmic density gradient}
 \begin{equation}
-\frac{R_\tref^\gkdb}{L_{n_s}^\gkdb}(\theta=0) =  \frac{R_\tref^\gkw}{L_{n_s}^\gkw}(\theta=0) \cdot R_\textrm{rat}
+\frac{R_\tref^\gkdb}{L_{n_s}^\gkdb}(\theta=0) =  \frac{R_\tref^\gkw}{L_{n_s}^\gkw}(\theta=0) \cdot  R_\textrm{rat} = \texttt{rln}_s \cdot  R_\textrm{rat} \cdot \frac{{L_{n_s}^\gkw}(\theta=0)}{{L_{n_s}^\gkw}(s=0)}
 \end{equation}
 In the presence of poloidal asymmetries, the logarithmic density gradient at $\theta=0$ can be obtained from the \texttt{cfdens} output file. In this file, the first column is the $s$ grid, then comes the logarithmic density gradient for each species and finally the density for each species (all with GKW normalisations). 
 
@@ -204,6 +204,32 @@ The quantity $g^{\zeta \zeta}$ is given on the $s$ grid in \texttt{geom.dat}
 
 \chapter{Outputs}
 
+\section{Mode amplitude}
+The normalised fields in GKW and the GKDB are related as follows:
+\begin{equation}
+\hat{\phi}_N^\gkdb = \hat{\phi}_N^\gkw\cdot\frac{T_\textrm{rat}\rho_\textrm{rat}}{q_\textrm{rat}R_\textrm{rat}}, \qquad \qquad
+\hat{A}_{\parallel N}^\gkdb = \hat{A}_{\parallel N}^\gkw\cdot\frac{B_\textrm{rat}\rho_\textrm{rat}^2}{R_\textrm{rat}}, \qquad \qquad 
+\hat{B}_{\parallel N}^\gkdb = \hat{B}_{\parallel N}^\gkw\cdot\frac{B_\textrm{rat}\rho_\textrm{rat}}{R_\textrm{rat}},  
+\end{equation}
+In GKW linear runs, the exponentially growing fields are further normalised with respect to the mode amplitude:
+\begin{equation}
+\hat{\phi}_{NN}^\gkw = \frac{1}{\mathcal{A}_f^\gkw}\hat{\phi}_N^\gkw,  \qquad \qquad \hat{A_\parallel}_{NN}^\gkw = \frac{1}{\mathcal{A}_f^\gkw}\hat{A_\parallel}_N^\gkw,  \qquad \qquad \hat{B_\parallel}_{NN}^\gkw = \frac{1}{\mathcal{A}_f^\gkw}\hat{B_\parallel}_N^\gkw
+\end{equation}
+with
+\begin{equation}
+\mathcal{A}_f^\gkw = \sqrt{\int \left[|\hat{\phi}_N^\gkw|^2 + |\hat{A}_{\parallel N}^\gkw|^2+|\hat{B}_{\parallel N}^\gkw|^2\right] \,\textrm{d}s} \bigg/ \int \,\textrm{d}s
+\end{equation}
+The mode amplitude used to normalise linear runs and compute the mode growth rate in the GKDB is 
+\begin{equation}
+\mathcal{A}_f^\gkdb  = \sqrt{\frac{1}{2\pi}\left.\int \left[|\hat{\phi}_N^\gkdb|^2 + |\hat{A}_{\parallel N}^\gkdb|^2  + |\hat{B}_{\parallel N}^\gkdb|^2\right] \,\textrm{d}\theta \right.}
+\end{equation}
+and the ratio of the GKDB to GKW mode amplitudes is therefore given by:
+\begin{equation}
+\frac{1}{\mathcal{A}_\textrm{rat}} = \frac{\mathcal{A}_f^\gkdb}{\mathcal{A}_f^\gkw} = \sqrt{\frac{1}{2\pi}\left[ |\frac{T_\textrm{rat}\rho_\textrm{rat}}{q_\textrm{rat}R_\textrm{rat}}\cdot\hat{\phi}_{NN}^\gkw|^2 + |\frac{B_\textrm{rat}\rho_\textrm{rat}^2}{R_\textrm{rat}}\cdot\hat{A}_{\parallel NN}^\gkw|^2+|\frac{B_\textrm{rat}\rho_\textrm{rat}}{R_\textrm{rat}}\cdot\hat{B}_{\parallel NN}^\gkw|^2\right]\,\textrm{d}\theta }
+\end{equation}
+The mode amplitude ratio can therefore be computed from the GKW output file \texttt{parallel.dat} which contains $\hat{\phi}_{NN}^\gkw(s)$, $\hat{A_\parallel}_{NN}^\gkw(s)$ and $\hat{B_\parallel}_{NN}^\gkw(s)$. Note that in this file, the fields may have been rotated in the complex plane, but this does not impact the mode amplitude calculation.
+
+\section{Mode growth rate and frequency}
 
 
 \bibliographystyle{unsrt}

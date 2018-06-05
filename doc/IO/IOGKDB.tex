@@ -30,13 +30,13 @@
 \maketitle
 
 
+\tableofcontents
+
 \chapter{Preamble}
 
 This document summarises the names, conventions and normalisations adopted for the inputs and outputs of the linear gyrokinetic database (GKDB) storing results from $\delta$f, flux-tube gyrokinetic simulations.\\ 
 The normalised inputs and outputs are independent of $\rho^*$ consistently with the local approximation and a spectral representation is assumed in the perpendicular plane (i.e. homogeneous turbulence).\\
 S.I. units are used everywhere with the exception of temperatures given in eV. This means that $kT$ is noted $T$ as is customary in plasma physics (and possibly confusing).
-
-\tableofcontents
 
 \chapter{Conventions and normalisations}
 \label{chap:normdef}
@@ -396,15 +396,15 @@ tag  &  - & String & $N_\textrm{tags}$ \\
 In linear runs, unstable modes are exponentially growing in time and so are the associated fluxes. 
 The exponentially growing outputs stored in the database are therefore normalised to a dimensionless mode amplitude defined as:
 \begin{equation}
- A_f(k_x,k_y) = \frac{1}{2\pi}\sqrt{\int \left[|\hat{\phi}_N(k_x,k_y,\theta)|^2 + |\hat{A}_{\parallel N}(k_x,k_y,\theta)|^2  + |\hat{B}_{\parallel N}(k_x,k_y,\theta)|^2\right] \,\textrm{d}\theta}
+ A_f(k_x,k_y) = \sqrt{\frac{1}{2\pi}\left.\int \left[|\hat{\phi}_N(k_x,k_y,\theta)|^2 + |\hat{A}_{\parallel N}(k_x,k_y,\theta)|^2  + |\hat{B}_{\parallel N}(k_x,k_y,\theta)|^2\right] \,\textrm{d}\theta \right.}
 \end{equation}
-with the Fourrier components of the electrostatic potential and vector potential normalised as follows:
+with the Fourier components of the electrostatic potential and vector potential normalised as follows:
 \begin{equation}
   \hat{\phi}_N = \frac{1}{\rho_*}\frac{q_\tref}{T_\tref} \hat{\phi} \qquad \qquad 
   \hat{A}_{\parallel N}=\frac{1}{\rho_*^2}\frac{1}{L_\tref B_\tref} \hat{A}_\parallel \qquad \qquad
   \hat{B}_{\parallel N}=\frac{1}{\rho_*}\frac{1}{B_\tref} \hat{B}_\parallel
 \end{equation}
-where $\rho_*=\rho_\tref/L_\tref$. The integral over $\theta$ is performed over the full length of the flux-tube.\\
+where $\rho_*=\rho_\tref/L_\tref$. The integral over $\theta$ is performed over the full length of the flux-tube (it is equivalent to an integral over one poloidal turn of the sum of all connected $k_x$ modes).\\
 The value of the mode amplitude in a linear run has little meaning by itself and is not stored in the database. 
 
 \section{Mode growth rate and frequency}
