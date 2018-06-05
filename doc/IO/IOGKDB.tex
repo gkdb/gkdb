@@ -469,11 +469,11 @@ For convenience, both the Laboratory frame and rotating frame fluxes are stored 
 \subsection{Normalisation}
 The fluxes are given for each Fourier mode, normalised to the corresponding (linear) mode amplitude and made dimensionless as follows:
 \begin{eqnarray}
- \Gamma_{Ns}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{\Gamma_s(k_x,k_y)}{n_\tref \vthref \rho_*^2}\\
- \Pi_{Ns}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{\Pi_s(k_x,k_y)}{n_\tref m_\tref L_\tref \vthref^2 \rho_*^2}\\
- Q_{Ns}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{Q_s(k_x,k_y)}{n_\tref T_\tref \vthref \rho_*^2}
+ \Gamma_{Ns}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{\Gamma_s(k_x,k_y)}{n_s \vthref \rho_*^2}\\
+ \Pi_{Ns}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{\Pi_s(k_x,k_y)}{n_s m_\tref L_\tref \vthref^2 \rho_*^2}\\
+ Q_{Ns}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{Q_s(k_x,k_y)}{n_s T_\tref \vthref \rho_*^2}
 \end{eqnarray}
-In addition, the electrostatic magnetic flutter and magnetic compressions are stored separately (e.g. $\Gamma_{Ns}=\Gamma_{Ns,\phi}+\Gamma_{Ns,A_\parallel}+\Gamma_{Ns,B_\parallel}$) for each flux. Note that the $\rho_*^2$ factor is included in $A_f^2$.
+In addition, the electrostatic magnetic flutter and magnetic compressions are stored separately (e.g. $\Gamma_{Ns}=\Gamma_{Ns,\phi}+\Gamma_{Ns,A_\parallel}+\Gamma_{Ns,B_\parallel}$) for each flux. The fluxes are normalised with respect to $n_s(\theta=0)$ rather than $n_\tref$ to allow for trace species with zero density.
 
 \subsection{Summary of the fluxes outputs}
 \begin{tabularx}{\textwidth}{|L|S|S|S|}
