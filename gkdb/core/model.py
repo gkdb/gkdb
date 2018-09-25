@@ -5,6 +5,7 @@ if sys.version_info < (3, 0):
     input = raw_input
 from peewee import *
 from peewee import FloatField, FloatField, ProgrammingError
+from peewee import JOIN
 import peewee
 import numpy as np
 import inspect
@@ -84,53 +85,51 @@ class Ids_properties(BaseModel):
 
     def to_dict(self):
         model_dict = {}
-        model_dict['point'] = model_to_dict(self, exclude=[Ids_properties.id, Ids_properties.date])
-        model_dict['code'] = model_to_dict(self.code.get(), exclude=[Code.point_id])
+        model_dict['point'] = model_to_dict(self, exclude=[Ids_properties.id, Ids_properties.creation_date])
+        model_dict['code'] = model_to_dict(self.code.get(), exclude=[Code.id, Code.ids_properties_id])
+        model_dict['model'] = model_to_dict(self.model.get(), exclude=[Model.id, Model.ids_properties_id])
         model_dict['species'] = []
         for species in self.species:
             model_dict['species'].append(
                 model_to_dict(species,
                               recurse=False,
-                              exclude=[Species.id, Species.point_id]))
+                              exclude=[Species.id, Species.ids_properties_id]))
         model_dict['wavevectors'] = []
         model_dict['flux_surface'] = model_to_dict(self.flux_surface.get(),
                                                    recurse=False,
-                                                   exclude=[Flux_Surface.elongation,
-                                                            Flux_Surface.triangularity,
-                                                            Flux_Surface.squareness])
+                                                   exclude=[
+                                                       Flux_surface.id,
+                                                       Flux_surface.elongation,
+                                                       Flux_surface.triangularity_upper,
+                                                       Flux_surface.triangularity_lower])
         for wavevector in self.wavevector.select():
             model_dict['wavevectors'].append(
                 model_to_dict(wavevector,
                               recurse=False,
-                              exclude=[Wavevector.id, Wavevector.point_id]))
-            eigenvalue_list = model_dict['wavevectors'][-1]['eigenvalues'] = []
-            for eigenvalue in wavevector.eigenvalue.select():
-                eigenvalue_list.append(
-                    model_to_dict(eigenvalue,
+                              exclude=[Wavevector.id, Wavevector.ids_properties_id]))
+            eigenmode_list = model_dict['wavevectors'][-1]['eigenvalues'] = []
+            for eigenmode in wavevector.eigenmode.select():
+                eigenmode_list.append(
+                    model_to_dict(eigenmode,
                                   recurse=False,
-                                  exclude=[Eigenvalue.id,
-                                           Eigenvalue.wavevector_id,
-                                           Eigenvalue.a_amplitude,
-                                           Eigenvalue.phi_amplitude,
-                                           Eigenvalue.phi_parity,
-                                           Eigenvalue.a_amplitude,
-                                           Eigenvalue.a_parity,
-                                           Eigenvalue.b_amplitude,
-                                           Eigenvalue.b_parity,
+                                  exclude=[Eigenmode.id,
+                                           Eigenmode.wavevector_id,
+                                           Eigenmode.phi_potential_perturbed_weight,
+                                           Eigenmode.phi_potential_perturbed_parity,
+                                           Eigenmode.a_field_parallel_perturbed_weight,
+                                           Eigenmode.a_field_parallel_perturbed_parity,
+                                           Eigenmode.b_field_parallel_perturbed_weight,
+                                           Eigenmode.b_field_parallel_perturbed_parity,
                                            ]))
-                eigenvalue_list[-1]['eigenvector'] = (
-                    model_to_dict(eigenvalue.eigenvector.get(),
-                                  recurse=False,
-                                  exclude=[Eigenvector.eigenvalue_id]))
 
-        for flux_table in [Particle_Fluxes, Heat_Fluxes_Lab, Heat_Fluxes_Rotating,
-                           Momentum_Fluxes_Lab, Momentum_Fluxes_Rotating]:
+        for flux_table in [Particles_rotating, Heat_fluxes_rotating, Heat_fluxes_laboratory,
+                           Momentum_fluxes_rotating, Momentum_fluxes_laboratory]:
             name = flux_table.__name__.lower()
             sel = (self.select(Wavevector.id, flux_table)
                        .where(Ids_properties.id == self.id)
-                       .join(Wavevector, JOIN_LEFT_OUTER)
-                       .join(Eigenvalue, JOIN_LEFT_OUTER)
-                       .join(Species, JOIN_LEFT_OUTER, (Species.point_id == Ids_properties.id))
+                       .join(Wavevector, JOIN.LEFT_OUTER)
+                       .join(Eigenmode, JOIN.LEFT_OUTER)
+                       .join(Species, JOIN.LEFT_OUTER, (Species.ids_properties_id == Ids_properties.id))
                        .join(flux_table).tuples())
             if sel.count() > 0:
                 model_dict[name] = {}
@@ -149,68 +148,68 @@ class Ids_properties(BaseModel):
 
 
     @classmethod
+    @db.atomic()
     def from_dict(cls, model_dict):
         import xarray as xr
-        with db.atomic() as txn:
-            dict_ = model_dict.pop('point')
-            dict_['date'] = datetime.datetime.now()
-            ids_properties = dict_to_model(Ids_properties, dict_)
-            point.save()
+        dict_ = model_dict.pop('point')
+        dict_['date'] = datetime.datetime.now()
+        ids_properties = dict_to_model(Ids_properties, dict_)
+        point.save()
 
-            specieses = []
-            for species_dict in model_dict.pop('species'):
-                species = dict_to_model(Species, species_dict)
-                species.ids_properties = point
-                species.save()
-                specieses.append(species)
+        specieses = []
+        for species_dict in model_dict.pop('species'):
+            species = dict_to_model(Species, species_dict)
+            species.ids_properties = point
+            species.save()
+            specieses.append(species)
 
-            for simple in [Code, Species_Global, Flux_Surface]:
-                name = simple.__name__.lower()
-                entry = dict_to_model(simple, model_dict.pop(name))
-                entry.ids_properties = point
-                entry.save(force_insert=True)
+        for simple in [Code, Species_Global, Flux_Surface]:
+            name = simple.__name__.lower()
+            entry = dict_to_model(simple, model_dict.pop(name))
+            entry.ids_properties = point
+            entry.save(force_insert=True)
 
-            eigenvalues = []
-            for ii, wavevector_dict in enumerate(model_dict.pop('wavevectors')):
-                eigenvalues.append([])
-                eigenvalues_dict = wavevector_dict.pop('eigenvalues')
-                wavevector = dict_to_model(Wavevector, wavevector_dict)
-                wavevector.ids_properties = point
-                wavevector.save()
-                for jj, eigenvalue_dict in enumerate(eigenvalues_dict):
-                    eigenvector = dict_to_model(Eigenvector, eigenvalue_dict.pop('eigenvector'))
-                    eigenvalue = dict_to_model(Eigenvalue, eigenvalue_dict)
-                    eigenvalue.wavevector = wavevector
-                    eigenvalue.save()
-                    eigenvector.eigenvalue = eigenvalue
-                    eigenvector.save(force_insert=True)
+        eigenvalues = []
+        for ii, wavevector_dict in enumerate(model_dict.pop('wavevectors')):
+            eigenvalues.append([])
+            eigenvalues_dict = wavevector_dict.pop('eigenvalues')
+            wavevector = dict_to_model(Wavevector, wavevector_dict)
+            wavevector.ids_properties = point
+            wavevector.save()
+            for jj, eigenvalue_dict in enumerate(eigenvalues_dict):
+                eigenvector = dict_to_model(Eigenvector, eigenvalue_dict.pop('eigenvector'))
+                eigenvalue = dict_to_model(Eigenvalue, eigenvalue_dict)
+                eigenvalue.wavevector = wavevector
+                eigenvalue.save()
+                eigenvector.eigenvalue = eigenvalue
+                eigenvector.save(force_insert=True)
 
-                    eigenvalues[ii].append(eigenvalue)
+                eigenvalues[ii].append(eigenvalue)
 
 
-            for flux_table in [Particle_Fluxes,
-                               Heat_Fluxes_Lab, Heat_Fluxes_Rotating,
-                               Momentum_Fluxes_Lab, Momentum_Fluxes_Rotating,
-                               Moments_Rotating]:
-                name = flux_table.__name__.lower()
-                flux_dict = model_dict.pop(name)
-                axes = flux_dict.pop('axes')
-                ds = xr.Dataset()
-                for varname, data in flux_dict.items():
-                    ds = ds.merge(xr.Dataset({varname: (axes, data)}))
-                df = ds.to_dataframe()
+        for flux_table in [Particle_Fluxes,
+                           Heat_Fluxes_Lab, Heat_Fluxes_Rotating,
+                           Momentum_Fluxes_Lab, Momentum_Fluxes_Rotating,
+                           Moments_Rotating]:
+            name = flux_table.__name__.lower()
+            flux_dict = model_dict.pop(name)
+            axes = flux_dict.pop('axes')
+            ds = xr.Dataset()
+            for varname, data in flux_dict.items():
+                ds = ds.merge(xr.Dataset({varname: (axes, data)}))
+            df = ds.to_dataframe()
+            if "poloidal_angle" in axes:
+                df = df.unstack('poloidal_angle')
+            for index, row in df.iterrows():
+                ind = dict(zip(df.index.names,index))
                 if "poloidal_angle" in axes:
-                    df = df.unstack('poloidal_angle')
-                for index, row in df.iterrows():
-                    ind = dict(zip(df.index.names,index))
-                    if "poloidal_angle" in axes:
-                        row = row.unstack()
-                        entry = dict_to_model(flux_table, {name: val for name, val in zip(row.index, row.as_matrix().tolist())})
-                    else:
-                        entry = dict_to_model(flux_table, row)
-                    entry.species = specieses[ind['species']]
-                    entry.eigenvalue = eigenvalues[ind['wavevector']][ind['eigenvalue']]
-                    entry.save(force_insert=True)
+                    row = row.unstack()
+                    entry = dict_to_model(flux_table, {name: val for name, val in zip(row.index, row.as_matrix().tolist())})
+                else:
+                    entry = dict_to_model(flux_table, row)
+                entry.species = specieses[ind['species']]
+                entry.eigenvalue = eigenvalues[ind['wavevector']][ind['eigenvalue']]
+                entry.save(force_insert=True)
         return point
 
     def to_json(self, path):
@@ -290,6 +289,14 @@ class Eigenmode(BaseModel):
     frequency_norm               = FloatField(help_text='Mode frequency')
     growth_rate_tolerance        = FloatField(help_text='Tolerance used for to determine the mode growth rate convergence')
 
+    phi_potential_perturbed_norm_real = ArrayField(FloatField, help_text='Parallel structure of the electrostatic potential perturbations (real part)', dimensions=1)
+    phi_potential_perturbed_norm_imaginary = ArrayField(FloatField, help_text='Parallel structure of the electrostatic potential perturbations (imaginary part)')
+    a_field_parallel_perturbed_norm_real = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel vector potential perturbations (real part)')
+    a_field_parallel_perturbed_norm_imaginary = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel vector potential perturbations (imaginary part)')
+    b_field_parallel_perturbed_norm_real = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel magnetic field perturbations (real part)')
+    b_field_parallel_perturbed_norm_imaginary = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel magnetic field perturbations (imaginary part)')
+    poloidal_angle = ArrayField(FloatField, help_text='Poloidal angle grid used to specify the parallel structure of the fields (eigenvectors)')
+
     # Derived quantities
     phi_potential_perturbed_weight = FloatField(null=True, help_text='Relative amplitude of the electrostatic potential perturbations. Computed internally from the parallel structure of the fields (eigenvectors)')
     phi_potential_perturbed_parity =    FloatField(null=True, help_text='Parity of the electrostatic potential perturbations. Computed internally from the parallel structure of the fields (eigenvectors)')
@@ -298,13 +305,6 @@ class Eigenmode(BaseModel):
     b_field_parallel_perturbed_weight =   FloatField(null=True, help_text='Relative amplitude of the parallel magnetic field perturbations. Computed internally from the parallel structure of the fields (eigenvectors)')
     b_field_parallel_perturbed_parity =      FloatField(null=True, help_text='Parity of the parallel magnetic field perturbations. Computed internally from the parallel structure of the fields (eigenvectors)')
 
-    phi_potential_perturbed_norm_real = ArrayField(FloatField, help_text='Parallel structure of the electrostatic potential perturbations (real part)', dimensions=1)
-    phi_potential_perturbed_norm_imaginary = ArrayField(FloatField, help_text='Parallel structure of the electrostatic potential perturbations (imaginary part)')
-    a_field_parallel_perturbed_norm_real = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel vector potential perturbations (real part)')
-    a_field_parallel_perturbed_norm_imaginary = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel vector potential perturbations (imaginary part)')
-    b_field_parallel_perturbed_norm_real = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel magnetic field perturbations (real part)')
-    b_field_parallel_perturbed_norm_imaginary = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel magnetic field perturbations (imaginary part)')
-    poloidal_angle = ArrayField(FloatField, help_text='Poloidal angle grid used to specify the parallel structure of the fields (eigenvectors)')
 
 class Species(BaseModel):
     ids_properties = ForeignKeyField(Ids_properties, related_name='species')
@@ -372,14 +372,14 @@ class Moments_rotating(BaseModel):
     parallel_temperature_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel temperature  moment of the gyrocenter distribution function in the rotating frame')
     perpendicular_temperature_real = ArrayField(FloatField,help_text='Real part of the perpendicular temperature moment of the gyrocenter distribution function in the rotating frame')
     perpendicular_temperature_imaginary = ArrayField(FloatField,help_text='Imaginary part of the perpendicular temperature moment of the gyrocenter distribution function in the rotating frame')
-    j0_density_real = ArrayField(FloatField,help_text='Real part of the density moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
-    j0_density_imaginary = ArrayField(FloatField,help_text='Imaginary part of the density moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
-    j0_parallel_velocity_real = ArrayField(FloatField,help_text='Real part of the parallel velocity moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
-    j0_parallel_velocity_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel velocity moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
-    j0_parallel_temperature_real = ArrayField(FloatField,help_text='Real part of the parallel temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
-    j0_parallel_temperature_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
-    j0_perpendicular_temperature_real = ArrayField(FloatField,help_text='Real part of the perpendicular temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
-    j0_perpendicular_temperature_imaginary = ArrayField(FloatField,help_text='Imaginary part of the perpendicular temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    density_gyroaveraged_norm_real = ArrayField(FloatField,help_text='Real part of the density moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    density_gyroaveraged_norm_imaginary = ArrayField(FloatField,help_text='Imaginary part of the density moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    velocity_parallel_gyroaveraged_norm_real = ArrayField(FloatField,help_text='Real part of the parallel velocity moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    velocity_parallel_gyroaveraged_norm_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel velocity moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    temperature_parallel_gyroaveraged_norm_real = ArrayField(FloatField,help_text='Real part of the parallel temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    temperature_parallel_gyroaveraged_norm_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    temperature_perpendicular_gyroaveraged_norm_real = ArrayField(FloatField,help_text='Real part of the perpendicular temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    temperature_perpendicular_gyroaveraged_norm_imaginary = ArrayField(FloatField,help_text='Imaginary part of the perpendicular temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
     class Meta:
         primary_key = CompositeKey('species', 'eigenmode')
 
