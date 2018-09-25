@@ -240,13 +240,11 @@ class Model(BaseModel):
     include_b_field_parallel = BooleanField(help_text='True if fluctuations of the parallel magnetic field (magnetic compression) were retained, false otherwise')
 
     collisions_pitch_only = BooleanField(help_text='True if pitch-angle scattering only was retained in the collision operator, false otherwise')
-    collisions_ei_only = BooleanField(help_text='True if electron to main ion collisions only were retained in the collision operator. False if all species collisions were retained')
     collisions_momentum_conservation = BooleanField(help_text='True if the collision operator conserves momentum, false otherwise.')
     collisions_energy_conservation = BooleanField(help_text='True if the collision operator conserves energy, false otherwise.')
     collisions_finite_larmor_radius = BooleanField(help_text='True if the collision operator includes finite Larmor radius effects, false otherwise.')
 
     initial_value_run = BooleanField(help_text='True if the run was an initial value run. False if it was an eigenvalue run.')
-    collision_enhancement_factor = FloatField(help_text='Enhancement factor for the collisions of electrons on main ions (to mimic the impact of impurity ions not present in the run)')
 
 class Flux_surface(BaseModel):
     ids_properties = ForeignKeyField(Ids_properties, related_name='flux_surface')
@@ -271,7 +269,6 @@ class Flux_surface(BaseModel):
 class Species_all(BaseModel):
     ids_properties = ForeignKeyField(Ids_properties, related_name='species_all')
     beta_reference = FloatField(help_text='Plasma beta')
-    collisionality_reference = FloatField(help_text='Plasma collision frequency')
     velocity_tor_norm = FloatField(help_text='Toroidal velocity (common to all species)')
     debye_length_reference = FloatField(help_text='Debye length')
     # Derived from Species
@@ -315,6 +312,16 @@ class Species(BaseModel):
     density_log_gradient_norm = FloatField(help_text='Species logarithmic density gradient (with respect to r_minor)')
     temperature_log_gradient_norm = FloatField(help_text='Species logarithmic temperature gradient (with respect to r_minor)')
     velocity_toroidal_gradient_norm = FloatField(help_text='Species toroidal velocity gradient (with respect to r_minor)')
+
+
+class Collisions(BaseModel):
+    species1_id = ForeignKeyField(Species, related_name='collisions')
+    species2_id = ForeignKeyField(Species, related_name='collisions')
+    collisionality_norm = FloatField(help_text='Normalized collisionality')
+
+    class Meta:
+        primary_key = CompositeKey('species1_id', 'species2_id')
+
 
 class Particle_fluxes_rotating(BaseModel):
     species = ForeignKeyField(Species, related_name='particles_rotating')
