@@ -80,12 +80,12 @@ class Tag(BaseModel):
 
 class Ids_properties(BaseModel):
     provider = TextField(help_text='Name of the provider of this entry')
-    creation_date = DateTimeField(help_text='Creation date of this entry')
+    modification_date = DateTimeField(help_text='Date this entry was last modified')
     comment = TextField(help_text='Any comment describing this entry')
 
     def to_dict(self):
         model_dict = {}
-        model_dict['point'] = model_to_dict(self, exclude=[Ids_properties.id, Ids_properties.creation_date])
+        model_dict['point'] = model_to_dict(self, exclude=[Ids_properties.id, Ids_properties.modification_date])
         model_dict['code'] = model_to_dict(self.code.get(), exclude=[Code.id, Code.ids_properties_id])
         model_dict['model'] = model_to_dict(self.model.get(), exclude=[Model.id, Model.ids_properties_id])
         model_dict['species'] = []
@@ -122,7 +122,7 @@ class Ids_properties(BaseModel):
                                            Eigenmode.b_field_parallel_perturbed_parity,
                                            ]))
 
-        for flux_table in [Particles_rotating, Heat_fluxes_rotating, Heat_fluxes_laboratory,
+        for flux_table in [Particle_fluxes_rotating, Energy_fluxes_rotating, Energy_fluxes_laboratory,
                            Momentum_fluxes_rotating, Momentum_fluxes_laboratory]:
             name = flux_table.__name__.lower()
             sel = (self.select(Wavevector.id, flux_table)
@@ -279,8 +279,8 @@ class Species_all(BaseModel):
 
 class Wavevector(BaseModel):
     ids_properties = ForeignKeyField(Ids_properties, related_name='wavevector')
-    radial_wavevector = FloatField(help_text='Radial component of the wavevector')
-    binormal_wavevector = FloatField(help_text='Binormal component of the wavevector')
+    radial_component_norm = FloatField(help_text='Radial component of the wavevector')
+    binormal_component_norm = FloatField(help_text='Binormal component of the wavevector')
     poloidal_turns = IntegerField(help_text='Number of poloidal turns covered by the flux-tube domain (i.e. number of coupled radial modes included in the simulation)')
 
 class Eigenmode(BaseModel):
@@ -295,7 +295,7 @@ class Eigenmode(BaseModel):
     a_field_parallel_perturbed_norm_imaginary = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel vector potential perturbations (imaginary part)')
     b_field_parallel_perturbed_norm_real = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel magnetic field perturbations (real part)')
     b_field_parallel_perturbed_norm_imaginary = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel magnetic field perturbations (imaginary part)')
-    poloidal_angle = ArrayField(FloatField, help_text='Poloidal angle grid used to specify the parallel structure of the fields (eigenvectors)')
+    poloidal_angle_grid = ArrayField(FloatField, help_text='Poloidal angle grid used to specify the parallel structure of the fields (eigenvectors)')
 
     # Derived quantities
     phi_potential_perturbed_weight = FloatField(null=True, help_text='Relative amplitude of the electrostatic potential perturbations. Computed internally from the parallel structure of the fields (eigenvectors)')
@@ -314,9 +314,9 @@ class Species(BaseModel):
     temperature_norm = FloatField(help_text='Species temperature')
     density_log_gradient_norm = FloatField(help_text='Species logarithmic density gradient (with respect to r_minor)')
     temperature_log_gradient_norm = FloatField(help_text='Species logarithmic temperature gradient (with respect to r_minor)')
-    toroidal_velocity_gradient_norm = FloatField(help_text='Species toroidal velocity gradient (with respect to r_minor)')
+    velocity_toroidal_gradient_norm = FloatField(help_text='Species toroidal velocity gradient (with respect to r_minor)')
 
-class Particles_rotating(BaseModel):
+class Particle_fluxes_rotating(BaseModel):
     species = ForeignKeyField(Species, related_name='particles_rotating')
     eigenmode = ForeignKeyField(Eigenmode, related_name='particles_rotating')
     phi_potential = FloatField(help_text='Gyrocenter particle flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
@@ -325,7 +325,7 @@ class Particles_rotating(BaseModel):
     class Meta:
         primary_key = CompositeKey('species', 'eigenmode')
 
-class Heat_fluxes_laboratory(BaseModel):
+class Energy_fluxes_laboratory(BaseModel):
     species = ForeignKeyField(Species, related_name='heat_fluxes_laboratory')
     eigenmode = ForeignKeyField(Eigenmode, related_name='heat_fluxes_laboratory')
     phi_potential = FloatField(help_text='Gyrocenter heat flux due to the electrostatic potential fluctuations in the Laboratory frame')
@@ -343,7 +343,7 @@ class Momentum_fluxes_laboratory(BaseModel):
     class Meta:
         primary_key = CompositeKey('species', 'eigenmode')
 
-class Heat_fluxes_rotating(BaseModel):
+class Energy_fluxes_rotating(BaseModel):
     species = ForeignKeyField(Species, related_name='heat_fluxes_rotating')
     eigenmode = ForeignKeyField(Eigenmode, related_name='heat_fluxes_rotating')
     phi_potential = FloatField(help_text='Gyrocenter heat flux due to the electrostatic potential fluctuations in the rotating frame')
@@ -366,12 +366,12 @@ class Moments_rotating(BaseModel):
     eigenmode = ForeignKeyField(Eigenmode, related_name='moments_rotating')
     density_real = ArrayField(FloatField,help_text='Real part of the density moment of the gyrocenter distribution function in the rotating frame')
     density_imaginary = ArrayField(FloatField,help_text='Imaginary part of the density moment of the gyrocenter distribution function in the rotating frame')
-    parallel_velocity_real = ArrayField(FloatField,help_text='Real part of the parallel velocity  moment of the gyrocenter distribution function in the rotating frame')
-    parallel_velocity_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel velocity  moment of the gyrocenter distribution function in the rotating frame')
-    parallel_temperature_real = ArrayField(FloatField,help_text='Real part of the parallel temperature  moment of the gyrocenter distribution function in the rotating frame')
-    parallel_temperature_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel temperature  moment of the gyrocenter distribution function in the rotating frame')
-    perpendicular_temperature_real = ArrayField(FloatField,help_text='Real part of the perpendicular temperature moment of the gyrocenter distribution function in the rotating frame')
-    perpendicular_temperature_imaginary = ArrayField(FloatField,help_text='Imaginary part of the perpendicular temperature moment of the gyrocenter distribution function in the rotating frame')
+    velocity_parallel_real = ArrayField(FloatField,help_text='Real part of the parallel velocity  moment of the gyrocenter distribution function in the rotating frame')
+    velocity_parallel_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel velocity  moment of the gyrocenter distribution function in the rotating frame')
+    temperature_parallel_real = ArrayField(FloatField,help_text='Real part of the parallel temperature  moment of the gyrocenter distribution function in the rotating frame')
+    temperature_parallel_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel temperature  moment of the gyrocenter distribution function in the rotating frame')
+    temperature_perpendicular_real = ArrayField(FloatField,help_text='Real part of the perpendicular temperature moment of the gyrocenter distribution function in the rotating frame')
+    temperature_perpendicular_imaginary = ArrayField(FloatField,help_text='Imaginary part of the perpendicular temperature moment of the gyrocenter distribution function in the rotating frame')
     density_gyroaveraged_norm_real = ArrayField(FloatField,help_text='Real part of the density moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
     density_gyroaveraged_norm_imaginary = ArrayField(FloatField,help_text='Imaginary part of the density moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
     velocity_parallel_gyroaveraged_norm_real = ArrayField(FloatField,help_text='Real part of the parallel velocity moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
@@ -392,7 +392,7 @@ def purge_tables():
             except ProgrammingError:
                 db.rollback()
     db.execute_sql('SET ROLE developer')
-    db.create_tables([Tag, Ids_properties, Code, Model, Flux_surface, Wavevector, Eigenmode, Species, Heat_fluxes_laboratory, Momentum_fluxes_laboratory, Heat_fluxes_rotating, Momentum_fluxes_rotating, Particles_rotating, Moments_rotating, Species_all])
+    db.create_tables([Tag, Ids_properties, Ids_properties_tag, Code, Model, Flux_surface, Wavevector, Eigenmode, Species, Energy_fluxes_laboratory, Momentum_fluxes_laboratory, Energy_fluxes_rotating, Momentum_fluxes_rotating, Particle_fluxes_rotating, Moments_rotating, Species_all])
 
 if __name__ == '__main__':
     embed()
