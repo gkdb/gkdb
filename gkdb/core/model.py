@@ -83,18 +83,19 @@ class Ids_properties(BaseModel):
     modification_date = DateTimeField(help_text='Date this entry was last modified')
     comment = TextField(help_text='Any comment describing this entry')
 
-    def to_dict(self):
+    def to_dict(self, include_gkdb_calculated=False):
         model_dict = {}
         model_dict['point'] = model_to_dict(self, exclude=[Ids_properties.id, Ids_properties.modification_date])
         model_dict['code'] = model_to_dict(self.code.get(), exclude=[Code.id, Code.ids_properties_id])
-        model_dict['model'] = model_to_dict(self.model.get(), exclude=[Model.id, Model.ids_properties_id])
+        model = self.model.get()
+        non_linear_run = model.non_linear_run
+        model_dict['model'] = model_to_dict(model, exclude=[Model.id, Model.ids_properties_id])
         model_dict['species'] = []
         for species in self.species:
             model_dict['species'].append(
                 model_to_dict(species,
                               recurse=False,
                               exclude=[Species.id, Species.ids_properties_id]))
-        model_dict['wavevectors'] = []
         model_dict['flux_surface'] = model_to_dict(self.flux_surface.get(),
                                                    recurse=False,
                                                    exclude=[
@@ -102,6 +103,9 @@ class Ids_properties(BaseModel):
                                                        Flux_surface.elongation,
                                                        Flux_surface.triangularity_upper,
                                                        Flux_surface.triangularity_lower])
+        model_dict['wavevectors'] = []
+        model_dict['fluxes'] = {}
+        model_dict['full_fluxes'] = {}
         for wavevector in self.wavevector.select():
             model_dict['wavevectors'].append(
                 model_to_dict(wavevector,
@@ -122,28 +126,22 @@ class Ids_properties(BaseModel):
                                            Eigenmode.b_field_parallel_perturbed_parity,
                                            ]))
 
-        for flux_table in [Particle_fluxes_rotating, Energy_fluxes_rotating, Energy_fluxes_laboratory,
-                           Momentum_fluxes_rotating, Momentum_fluxes_laboratory]:
-            name = flux_table.__name__.lower()
-            sel = (self.select(Wavevector.id, flux_table)
+            sel = (self.select(Wavevector.id, Fluxes)
                        .where(Ids_properties.id == self.id)
                        .join(Wavevector, JOIN.LEFT_OUTER)
                        .join(Eigenmode, JOIN.LEFT_OUTER)
                        .join(Species, JOIN.LEFT_OUTER, (Species.ids_properties_id == Ids_properties.id))
-                       .join(flux_table).tuples())
+                       .join(Fluxes).dicts())
             if sel.count() > 0:
-                model_dict[name] = {}
-                df = pd.DataFrame.from_records(list(sel),
-                                               columns=['wavevector_id', 'species_id', 'eigenvalue_id',
-                                                        'phi_potential', 'a_parallel', 'b_field_parallel'],
-                                               index=['wavevector_id', 'species_id', 'eigenvalue_id'])
+                model_dict['fluxes'] = {}
+                df = pd.DataFrame.from_records(list(sel))
+                df.rename({'id': 'wavevector'}, axis=1, inplace=True)
+                df.set_index(['wavevector', 'species', 'eigenmode'], inplace=True)
                 xr = df.to_xarray()
                 for k, v in xr.data_vars.items():
-                    axes = [dim[:-3] for dim in v.dims]
-                    model_dict[name]['axes'] = axes
-                    model_dict[name][k] =  v.data.tolist()
-            else:
-                model_dict[name] = None
+                    model_dict['fluxes']['axes'] = v.dims
+                    model_dict['fluxes'][k] =  v.data.tolist()
+
         return model_dict
 
 
