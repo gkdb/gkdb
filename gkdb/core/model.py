@@ -270,7 +270,7 @@ class Species_all(BaseModel):
     ids_properties = ForeignKeyField(Ids_properties, related_name='species_all')
     beta_reference = FloatField(help_text='Plasma beta')
     velocity_tor_norm = FloatField(help_text='Toroidal velocity (common to all species)')
-    debye_length = FloatField(help_text='Debye length')
+    debye_length_reference = FloatField(help_text='Debye length')
     # Derived from Species
     zeff = FloatField(null=True)
 
