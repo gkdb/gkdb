@@ -245,6 +245,9 @@ class Model(BaseModel):
     collisions_finite_larmor_radius = BooleanField(help_text='True if the collision operator includes finite Larmor radius effects, false otherwise.')
 
     initial_value_run = BooleanField(help_text='True if the run was an initial value run. False if it was an eigenvalue run.')
+    non_linear_run = BooleanField()
+
+    time_interval_norm = FloatField(null=True)
 
 class Flux_surface(BaseModel):
     ids_properties = ForeignKeyField(Ids_properties, related_name='flux_surface')
@@ -271,6 +274,7 @@ class Species_all(BaseModel):
     beta_reference = FloatField(help_text='Plasma beta')
     velocity_tor_norm = FloatField(help_text='Toroidal velocity (common to all species)')
     debye_length_reference = FloatField(help_text='Debye length')
+    shearing_rate_norm = FloatField()
     # Derived from Species
     zeff = FloatField(null=True)
 
@@ -336,6 +340,22 @@ class Fluxes(BaseModel):
         primary_key = CompositeKey('species', 'eigenmode')
 
 
+class Total_fluxes(BaseModel):
+    species = ForeignKeyField(Species, related_name='total_fluxes')
+    ids_properties = ForeignKeyField(Ids_properties, related_name='total_fluxes')
+    energy_flux_phi_potential = FloatField(help_text='Gyrocenter energy flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
+    energy_flux_a_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    energy_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
+    particle_flux_phi_potential = FloatField(help_text='Gyrocenter particle flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
+    particle_flux_a_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    particle_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
+    momentum_flux_phi_potential = FloatField(help_text='Gyrocenter momentum flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
+    momentum_flux_a_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    momentum_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
+    class Meta:
+        primary_key = CompositeKey('species', 'ids_properties')
+
+
 class Moments_rotating(BaseModel):
     species = ForeignKeyField(Species, related_name='moments_rotating')
     eigenmode = ForeignKeyField(Eigenmode, related_name='moments_rotating')
@@ -359,7 +379,7 @@ def purge_tables():
             except ProgrammingError:
                 db.rollback()
     db.execute_sql('SET ROLE developer')
-    db.create_tables([Tag, Ids_properties, Ids_properties_tag, Code, Model, Flux_surface, Wavevector, Eigenmode, Species, Fluxes, Moments_rotating, Species_all])
+    db.create_tables([Tag, Ids_properties, Ids_properties_tag, Code, Model, Flux_surface, Wavevector, Eigenmode, Species, Fluxes, Total_fluxes, Moments_rotating, Species_all])
 
 if __name__ == '__main__':
     embed()
