@@ -1,4 +1,5 @@
 import sys
+from collections import OrderedDict
 from IPython import embed
 if sys.version_info < (3, 0):
     print('Python 2')
@@ -19,6 +20,8 @@ import datetime
 import pandas as pd
 from os import environ
 from playhouse.db_url import connect
+
+from gkdb.core.ids_checks import check_ids_entry
 
 try:
     HOST = environ['PGHOST'] or 'gkdb.org'
@@ -174,11 +177,12 @@ class Ids_properties(BaseModel):
     @classmethod
     @db.atomic()
     def from_dict(cls, model_dict):
-        import xarray as xr
-        dict_ = model_dict.pop('point')
-        dict_['date'] = datetime.datetime.now()
-        ids_properties = dict_to_model(Ids_properties, dict_)
-        point.save()
+        if not check_ids_entry(model_dict):
+            raise Exception('Point rejected')
+        ids_prop = model_dict.pop('ids_properties')
+        ids_prop['date'] = datetime.datetime.now()
+        ids_properties = dict_to_model(Ids_properties, ids_prop)
+        ids_properties.save()
 
         specieses = []
         for species_dict in model_dict.pop('species'):
@@ -245,7 +249,7 @@ class Ids_properties(BaseModel):
         with open(path, 'r') as file_:
             dict_ = json.load(file_)
             ids_properties = Ids_properties.from_dict(dict_)
-        return point
+        return ids_properties
 
 class Ids_properties_tag(BaseModel):
     ids_properties = ForeignKeyField(Ids_properties)
