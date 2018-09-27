@@ -251,11 +251,6 @@ class Model(BaseModel):
 class Flux_surface(BaseModel):
     ids_properties = ForeignKeyField(Ids_properties, related_name='flux_surface')
     r_minor_norm = FloatField(help_text='Minor radius of the flux surface of interest')
-    # Derived from original shape
-    elongation =    FloatField(null=True, help_text='Elongation of the flux surface of interest. Computed internally from the shape parameters (c_n,s_n)')
-    triangularity_upper = FloatField(null=True, help_text='Upper triangularity of the flux surface of interest. Computed internally from the shape parameters (c_n,s_n)')
-    triangularity_lower = FloatField(null=True, help_text='Lower triangularity of the flux surface of interest. Computed internally from the shape parameters (c_n,s_n)')
-    # Non-derived
     q = FloatField(help_text='Safety factor')
     magnetic_shear_r_minor = FloatField(help_text='Magnetic shear')
     pressure_gradient_norm = FloatField(help_text='Total pressure gradient (with respect to r_minor) used to characterise the local magnetic equilibrium')
@@ -266,12 +261,16 @@ class Flux_surface(BaseModel):
     shape_coefficients_s = ArrayField(FloatField, help_text='Array containing the s_n coefficients parametrising the flux surface of interest. The first element is always zero.')
     dc_dr_minor_norm = ArrayField(FloatField, help_text='Radial derivative (with respect to r_minor) of the c_n coefficients')
     ds_dr_minor_norm = ArrayField(FloatField, help_text='Radial derivative (with respect to r_minor) of the s_n coefficients. The first element is always zero.')
+    # Derived from original shape
+    elongation =    FloatField(null=True, help_text='Elongation of the flux surface of interest. Computed internally from the shape parameters (c_n,s_n)')
+    triangularity_upper = FloatField(null=True, help_text='Upper triangularity of the flux surface of interest. Computed internally from the shape parameters (c_n,s_n)')
+    triangularity_lower = FloatField(null=True, help_text='Lower triangularity of the flux surface of interest. Computed internally from the shape parameters (c_n,s_n)')
 
 class Species_all(BaseModel):
     ids_properties = ForeignKeyField(Ids_properties, related_name='species_all')
     beta_reference = FloatField(help_text='Plasma beta')
-    velocity_tor_norm = FloatField(help_text='Toroidal velocity (common to all species)')
     debye_length_reference = FloatField(help_text='Debye length')
+    velocity_tor_norm = FloatField(help_text='Toroidal velocity (common to all species)')
     # Only for non-linear runs
     shearing_rate_norm = FloatField(null=True)
     # Derived from Species
@@ -327,56 +326,56 @@ class Collisions(BaseModel):
     collisionality_norm = FloatField(help_text='Normalized collisionality')
 
 
-class Fluxes(BaseModel):
+class Fluxes_norm(BaseModel):
     # Fluxes optional for non-linear runs
     # *_a_parallel is Null if include_a_field_parallel is False
     # *_b_parallel is Null if include_b_field_parallel is False
     species = ForeignKeyField(Species, related_name='fluxes')
     eigenmode = ForeignKeyField(Eigenmode, related_name='fluxes')
-    energy_flux_phi_potential = FloatField(help_text='Gyrocenter energy flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
-    energy_flux_a_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
-    energy_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
     particle_flux_phi_potential = FloatField(help_text='Gyrocenter particle flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
-    particle_flux_a_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    particle_flux_a_field_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
     particle_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
     momentum_flux_phi_potential = FloatField(help_text='Gyrocenter momentum flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
-    momentum_flux_a_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    momentum_flux_a_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
     momentum_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
+    energy_flux_phi_potential = FloatField(help_text='Gyrocenter energy flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
+    energy_flux_a_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    energy_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
     class Meta:
         primary_key = CompositeKey('species', 'eigenmode')
 
 
-class Total_fluxes(BaseModel):
+class Total_fluxes_norm(BaseModel):
     # Total fluxes not defined for linear runs
     # *_a_parallel is Null if include_a_field_parallel is False
     # *_b_parallel is Null if include_b_field_parallel is False
     species = ForeignKeyField(Species, related_name='total_fluxes')
     ids_properties = ForeignKeyField(Ids_properties, related_name='total_fluxes')
-    energy_flux_phi_potential = FloatField(help_text='Gyrocenter energy flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
-    energy_flux_a_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
-    energy_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
     particle_flux_phi_potential = FloatField(help_text='Gyrocenter particle flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
-    particle_flux_a_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    particle_flux_a_field_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
     particle_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
     momentum_flux_phi_potential = FloatField(help_text='Gyrocenter momentum flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
-    momentum_flux_a_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    momentum_flux_a_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
     momentum_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
+    energy_flux_phi_potential = FloatField(help_text='Gyrocenter energy flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
+    energy_flux_a_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    energy_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
     class Meta:
         primary_key = CompositeKey('species', 'ids_properties')
 
 
-class Moments_rotating_frame(BaseModel):
+class Moments_norm_rotating_frame(BaseModel):
     # Always optional
     species = ForeignKeyField(Species, related_name='moments_rotating')
     eigenmode = ForeignKeyField(Eigenmode, related_name='moments_rotating')
-    density_gyroaveraged_norm_real = ArrayField(FloatField,help_text='Real part of the density moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
-    density_gyroaveraged_norm_imaginary = ArrayField(FloatField,help_text='Imaginary part of the density moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
-    velocity_parallel_gyroaveraged_norm_real = ArrayField(FloatField,help_text='Real part of the parallel velocity moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
-    velocity_parallel_gyroaveraged_norm_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel velocity moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
-    temperature_parallel_gyroaveraged_norm_real = ArrayField(FloatField,help_text='Real part of the parallel temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
-    temperature_parallel_gyroaveraged_norm_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
-    temperature_perpendicular_gyroaveraged_norm_real = ArrayField(FloatField,help_text='Real part of the perpendicular temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
-    temperature_perpendicular_gyroaveraged_norm_imaginary = ArrayField(FloatField,help_text='Imaginary part of the perpendicular temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    density_gyroaveraged_real = ArrayField(FloatField,help_text='Real part of the density moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    density_gyroaveraged_imaginary = ArrayField(FloatField,help_text='Imaginary part of the density moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    velocity_parallel_gyroaveraged_real = ArrayField(FloatField,help_text='Real part of the parallel velocity moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    velocity_parallel_gyroaveraged_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel velocity moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    temperature_parallel_gyroaveraged_real = ArrayField(FloatField,help_text='Real part of the parallel temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    temperature_parallel_gyroaveraged_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    temperature_perpendicular_gyroaveraged_real = ArrayField(FloatField,help_text='Real part of the perpendicular temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
+    temperature_perpendicular_gyroaveraged_imaginary = ArrayField(FloatField,help_text='Imaginary part of the perpendicular temperature moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
     class Meta:
         primary_key = CompositeKey('species', 'eigenmode')
 
@@ -389,7 +388,7 @@ def purge_tables():
             except ProgrammingError:
                 db.rollback()
     db.execute_sql('SET ROLE developer')
-    db.create_tables([Tag, Ids_properties, Ids_properties_tag, Code, Model, Collisions, Flux_surface, Wavevector, Eigenmode, Species, Fluxes, Total_fluxes, Moments_rotating_frame, Species_all])
+    db.create_tables([Tag, Ids_properties, Ids_properties_tag, Code, Model, Collisions, Flux_surface, Wavevector, Eigenmode, Species, Fluxes_norm, Total_fluxes_norm, Moments_norm_rotating_frame, Species_all])
 
 if __name__ == '__main__':
     embed()
