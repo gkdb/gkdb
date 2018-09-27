@@ -85,17 +85,30 @@ class Ids_properties(BaseModel):
 
     def to_dict(self, include_gkdb_calculated=False):
         model_dict = {}
-        model_dict['point'] = model_to_dict(self, exclude=[Ids_properties.id, Ids_properties.creation_date])
+        model_dict['ids_properties'] = model_to_dict(self, exclude=[Ids_properties.id, Ids_properties.creation_date])
         model_dict['code'] = model_to_dict(self.code.get(), exclude=[Code.id, Code.ids_properties_id])
         model = self.model.get()
         non_linear_run = model.non_linear_run
         model_dict['model'] = model_to_dict(model, exclude=[Model.id, Model.ids_properties_id])
+        model_dict['species_all'] = model_to_dict(self.species_all.get(), exclude=[Species_all.id, Species_all.ids_properties_id, Species_all.zeff])
         model_dict['species'] = []
-        for species in self.species:
+        model_dict['total_fluxes_norm'] = []
+        for species in self.species.order_by(Species.id):
             model_dict['species'].append(
                 model_to_dict(species,
                               recurse=False,
                               exclude=[Species.id, Species.ids_properties_id]))
+            sel = (Total_fluxes_norm.select()
+                   .where(Total_fluxes_norm.ids_properties_id == self.id)
+                   .where(Total_fluxes_norm.species_id == species.id)
+                   )
+            if sel.count() == 1:
+                totflux = model_to_dict(sel.get(),
+                              recurse=False,
+                              exclude=[Total_fluxes_norm.ids_properties_id,
+                                       Total_fluxes_norm.species_id])
+                model_dict['total_fluxes_norm'].append(totflux)
+
         model_dict['flux_surface'] = model_to_dict(self.flux_surface.get(),
                                                    recurse=False,
                                                    exclude=[
@@ -103,16 +116,14 @@ class Ids_properties(BaseModel):
                                                        Flux_surface.elongation,
                                                        Flux_surface.triangularity_upper,
                                                        Flux_surface.triangularity_lower])
-        model_dict['wavevectors'] = []
-        model_dict['fluxes'] = {}
-        model_dict['full_fluxes'] = {}
-        for wavevector in self.wavevector.select():
-            model_dict['wavevectors'].append(
+        model_dict['wavevector'] = []
+        for wavevector in self.wavevector.select().order_by(Wavevector.id):
+            model_dict['wavevector'].append(
                 model_to_dict(wavevector,
                               recurse=False,
                               exclude=[Wavevector.id, Wavevector.ids_properties_id]))
-            eigenmode_list = model_dict['wavevectors'][-1]['eigenvalues'] = []
-            for eigenmode in wavevector.eigenmode.select():
+            eigenmode_list = model_dict['wavevector'][-1]['eigenmode'] = []
+            for eigenmode in wavevector.eigenmode.select().order_by(Eigenmode.id):
                 eigenmode_list.append(
                     model_to_dict(eigenmode,
                                   recurse=False,
@@ -126,22 +137,37 @@ class Ids_properties(BaseModel):
                                            Eigenmode.b_field_parallel_perturbed_parity,
                                            ]))
 
-            sel = (self.select(Wavevector.id, Fluxes)
+            #sel = (self.select(Wavevector.id, *[fn.array_agg(getattr(Fluxes, col), coerce=False).alias(col) for col in Fluxes._meta.columns if col not in ['species_id', 'eigenmode_id']])
+        for table in [Fluxes_norm, Moments_norm_rotating_frame]:
+            sel = (self.select(Wavevector.id.alias('wavevector'), Species.id, table)
                        .where(Ids_properties.id == self.id)
-                       .join(Wavevector, JOIN.LEFT_OUTER)
-                       .join(Eigenmode, JOIN.LEFT_OUTER)
-                       .join(Species, JOIN.LEFT_OUTER, (Species.ids_properties_id == Ids_properties.id))
-                       .join(Fluxes).dicts())
-            if sel.count() > 0:
-                model_dict['fluxes'] = {}
-                df = pd.DataFrame.from_records(list(sel))
-                df.rename({'id': 'wavevector'}, axis=1, inplace=True)
-                df.set_index(['wavevector', 'species', 'eigenmode'], inplace=True)
-                xr = df.to_xarray()
-                for k, v in xr.data_vars.items():
-                    model_dict['fluxes']['axes'] = v.dims
-                    model_dict['fluxes'][k] =  v.data.tolist()
+                       .join(Wavevector)
+                       .join(Eigenmode)
+                       .switch(Ids_properties)
+                       .join(Species)
+                       .join(table, on=(table.species == Species.id) & (table.eigenmode == Eigenmode.id))
+                       .order_by(Wavevector.id, Eigenmode.id, Species.id)
+                       #.group_by(Species.id, Wavevector.id)
+                       .dicts())
+            wavevectors = OrderedDict()
+            for fluxlike in sel:
+                wv = fluxlike.pop('wavevector')
+                eig = fluxlike.pop('eigenmode')
+                sp = fluxlike.pop('species')
+                if wv not in wavevectors:
+                    wavevectors[wv] = OrderedDict()
+                if eig not in wavevectors[wv]:
+                    wavevectors[wv][eig] = OrderedDict()
+                wavevectors[wv][eig][sp] = fluxlike
+                del fluxlike['id']
 
+            wavevectors_list = []
+            for ii, (wv_id, wavevector) in enumerate(sorted(wavevectors.items(), key=lambda x: x[0])):
+                eigenmodes = []
+                for jj, (eig_id, eigenmode) in enumerate(sorted(wavevector.items(), key=lambda x: x[0])):
+                    model_dict['wavevector'][ii]['eigenmode'][jj][table.__name__.lower()] = []
+                    for sp_id, species in sorted(eigenmode.items(), key=lambda x: x[0]):
+                        model_dict['wavevector'][ii]['eigenmode'][jj][table.__name__.lower()].append(species)
         return model_dict
 
 
