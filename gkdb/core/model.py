@@ -80,12 +80,12 @@ class Tag(BaseModel):
 
 class Ids_properties(BaseModel):
     provider = TextField(help_text='Name of the provider of this entry')
-    modification_date = DateTimeField(help_text='Date this entry was last modified')
+    creation_date = DateTimeField(help_text='Date this entry was last modified')
     comment = TextField(help_text='Any comment describing this entry')
 
     def to_dict(self, include_gkdb_calculated=False):
         model_dict = {}
-        model_dict['point'] = model_to_dict(self, exclude=[Ids_properties.id, Ids_properties.modification_date])
+        model_dict['point'] = model_to_dict(self, exclude=[Ids_properties.id, Ids_properties.creation_date])
         model_dict['code'] = model_to_dict(self.code.get(), exclude=[Code.id, Code.ids_properties_id])
         model = self.model.get()
         non_linear_run = model.non_linear_run
@@ -242,19 +242,19 @@ class Model(BaseModel):
     collisions_energy_conservation = BooleanField(help_text='True if the collision operator conserves energy, false otherwise.')
     collisions_finite_larmor_radius = BooleanField(help_text='True if the collision operator includes finite Larmor radius effects, false otherwise.')
 
-    initial_value_run = BooleanField(help_text='True if the run was an initial value run. False if it was an eigenvalue run.')
+    initial_value_run = BooleanField(help_text='True if the run was an initial value run. False if it was an eigenvalue run. Always 1 for non-linear run.')
     non_linear_run = BooleanField()
 
-    time_interval_norm = FloatField(null=True)
+    # Optional
+    time_interval_norm = ArrayField(FloatField, null=True)
 
 class Flux_surface(BaseModel):
     ids_properties = ForeignKeyField(Ids_properties, related_name='flux_surface')
     r_minor_norm = FloatField(help_text='Minor radius of the flux surface of interest')
-    # Derived from Shape
+    # Derived from original shape
     elongation =    FloatField(null=True, help_text='Elongation of the flux surface of interest. Computed internally from the shape parameters (c_n,s_n)')
     triangularity_upper = FloatField(null=True, help_text='Upper triangularity of the flux surface of interest. Computed internally from the shape parameters (c_n,s_n)')
     triangularity_lower = FloatField(null=True, help_text='Lower triangularity of the flux surface of interest. Computed internally from the shape parameters (c_n,s_n)')
-    #squareness =    FloatField(null=True, help_text='Squareness of the flux surface of interest. Computed internally from the shape parameters (c_n,s_n)')
     # Non-derived
     q = FloatField(help_text='Safety factor')
     magnetic_shear_r_minor = FloatField(help_text='Magnetic shear')
@@ -272,7 +272,8 @@ class Species_all(BaseModel):
     beta_reference = FloatField(help_text='Plasma beta')
     velocity_tor_norm = FloatField(help_text='Toroidal velocity (common to all species)')
     debye_length_reference = FloatField(help_text='Debye length')
-    shearing_rate_norm = FloatField()
+    # Only for non-linear runs
+    shearing_rate_norm = FloatField(null=True)
     # Derived from Species
     zeff = FloatField(null=True)
 
@@ -280,14 +281,18 @@ class Wavevector(BaseModel):
     ids_properties = ForeignKeyField(Ids_properties, related_name='wavevector')
     radial_component_norm = FloatField(help_text='Radial component of the wavevector')
     binormal_component_norm = FloatField(help_text='Binormal component of the wavevector')
-    poloidal_turns = IntegerField(help_text='Number of poloidal turns covered by the flux-tube domain (i.e. number of coupled radial modes included in the simulation)')
+    # Only for linear
+    poloidal_turns = IntegerField(null=True, help_text='Number of poloidal turns covered by the flux-tube domain (i.e. number of coupled radial modes included in the simulation)')
 
 class Eigenmode(BaseModel):
+    # Eigenmode is optional for non-linear
     wavevector                   = ForeignKeyField(Wavevector, related_name='eigenmode')
-    growth_rate_norm             = FloatField(help_text='Mode growth rate')
-    frequency_norm               = FloatField(help_text='Mode frequency')
-    growth_rate_tolerance        = FloatField(help_text='Tolerance used for to determine the mode growth rate convergence')
+    # Only defined for linear
+    growth_rate_norm             = FloatField(null=True, help_text='Mode growth rate')
+    frequency_norm               = FloatField(null=True, help_text='Mode frequency')
+    growth_rate_tolerance        = FloatField(null=True, help_text='Tolerance used for to determine the mode growth rate convergence')
 
+    # Always optional
     phi_potential_perturbed_norm_real = ArrayField(FloatField, help_text='Parallel structure of the electrostatic potential perturbations (real part)', dimensions=1)
     phi_potential_perturbed_norm_imaginary = ArrayField(FloatField, help_text='Parallel structure of the electrostatic potential perturbations (imaginary part)')
     a_field_parallel_perturbed_norm_real = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel vector potential perturbations (real part)')
@@ -323,6 +328,9 @@ class Collisions(BaseModel):
 
 
 class Fluxes(BaseModel):
+    # Fluxes optional for non-linear runs
+    # *_a_parallel is Null if include_a_field_parallel is False
+    # *_b_parallel is Null if include_b_field_parallel is False
     species = ForeignKeyField(Species, related_name='fluxes')
     eigenmode = ForeignKeyField(Eigenmode, related_name='fluxes')
     energy_flux_phi_potential = FloatField(help_text='Gyrocenter energy flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
@@ -339,6 +347,9 @@ class Fluxes(BaseModel):
 
 
 class Total_fluxes(BaseModel):
+    # Total fluxes not defined for linear runs
+    # *_a_parallel is Null if include_a_field_parallel is False
+    # *_b_parallel is Null if include_b_field_parallel is False
     species = ForeignKeyField(Species, related_name='total_fluxes')
     ids_properties = ForeignKeyField(Ids_properties, related_name='total_fluxes')
     energy_flux_phi_potential = FloatField(help_text='Gyrocenter energy flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
@@ -354,7 +365,8 @@ class Total_fluxes(BaseModel):
         primary_key = CompositeKey('species', 'ids_properties')
 
 
-class Moments_rotating(BaseModel):
+class Moments_rotating_frame(BaseModel):
+    # Always optional
     species = ForeignKeyField(Species, related_name='moments_rotating')
     eigenmode = ForeignKeyField(Eigenmode, related_name='moments_rotating')
     density_gyroaveraged_norm_real = ArrayField(FloatField,help_text='Real part of the density moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
@@ -377,7 +389,7 @@ def purge_tables():
             except ProgrammingError:
                 db.rollback()
     db.execute_sql('SET ROLE developer')
-    db.create_tables([Tag, Ids_properties, Ids_properties_tag, Code, Model, Flux_surface, Wavevector, Eigenmode, Species, Fluxes, Total_fluxes, Moments_rotating, Species_all])
+    db.create_tables([Tag, Ids_properties, Ids_properties_tag, Code, Model, Collisions, Flux_surface, Wavevector, Eigenmode, Species, Fluxes, Total_fluxes, Moments_rotating_frame, Species_all])
 
 if __name__ == '__main__':
     embed()
