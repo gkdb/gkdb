@@ -112,6 +112,21 @@ class Ids_properties(BaseModel):
                                        Total_fluxes_norm.species_id])
                 model_dict['total_fluxes_norm'].append(totflux)
 
+        sel = (Ids_properties.select(Collisions)
+               .join(Species)
+               .join(Collisions, JOIN.RIGHT_OUTER, on=(Species.id == Collisions.species1_id) & (Species.id == Collisions.species2_id))
+               .order_by(Collisions.species1_id, Collisions.species2_id)
+               )
+        n_spec = len(model_dict['species'])
+        collisions = np.full([n_spec * n_spec, 3], np.NaN)
+        for ii, (species1, species2, coll) in enumerate(sel.tuples()):
+            collisions[ii, :] = (species1, species2, coll)
+        collisions = collisions.reshape(n_spec, n_spec, 3)
+        if np.any(np.isnan(collisions)):
+            raise Exception('Could not read collisions table')
+        coll_list = collisions[:,:,-1].tolist()
+        model_dict['collisions'] = coll_list
+
         model_dict['flux_surface'] = model_to_dict(self.flux_surface.get(),
                                                    recurse=False,
                                                    exclude=[
