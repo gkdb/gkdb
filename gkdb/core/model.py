@@ -131,6 +131,7 @@ class Ids_properties(BaseModel):
                                                    recurse=False,
                                                    exclude=[
                                                        Flux_surface.id,
+                                                       Flux_surface.ids_properties_id,
                                                        Flux_surface.elongation,
                                                        Flux_surface.triangularity_upper,
                                                        Flux_surface.triangularity_lower])
