@@ -371,6 +371,9 @@ class Collisions(BaseModel):
     species2_id = ForeignKeyField(Species, related_name='collisions')
     collisionality_norm = FloatField(help_text='Normalized collisionality')
 
+    class Meta:
+        primary_key = CompositeKey('species1_id', 'species2_id')
+
 
 class Fluxes_norm(BaseModel):
     # Fluxes optional for non-linear runs
