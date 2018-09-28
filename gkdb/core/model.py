@@ -321,9 +321,9 @@ class Eigenmode(BaseModel):
     frequency_norm               = FloatField(null=True, help_text='Mode frequency')
     growth_rate_tolerance        = FloatField(null=True, help_text='Tolerance used for to determine the mode growth rate convergence')
 
-    # Always optional
     phi_potential_perturbed_norm_real = ArrayField(FloatField, help_text='Parallel structure of the electrostatic potential perturbations (real part)', dimensions=1)
     phi_potential_perturbed_norm_imaginary = ArrayField(FloatField, help_text='Parallel structure of the electrostatic potential perturbations (imaginary part)')
+    # Always optional
     a_field_parallel_perturbed_norm_real = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel vector potential perturbations (real part)')
     a_field_parallel_perturbed_norm_imaginary = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel vector potential perturbations (imaginary part)')
     b_field_parallel_perturbed_norm_real = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel magnetic field perturbations (real part)')
