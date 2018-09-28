@@ -30,13 +30,13 @@
 \maketitle
 
 
+\tableofcontents
+
 \chapter{Preamble}
 
 This document summarises the names, conventions and normalisations adopted for the inputs and outputs of the linear gyrokinetic database (GKDB) storing results from $\delta$f, flux-tube gyrokinetic simulations.\\ 
 The normalised inputs and outputs are independent of $\rho^*$ consistently with the local approximation and a spectral representation is assumed in the perpendicular plane (i.e. homogeneous turbulence).\\
 S.I. units are used everywhere with the exception of temperatures given in eV. This means that $kT$ is noted $T$ as is customary in plasma physics (and possibly confusing).
-
-\tableofcontents
 
 \chapter{Conventions and normalisations}
 \label{chap:normdef}
@@ -396,15 +396,15 @@ tag  &  - & String & $N_\textrm{tags}$ \\
 In linear runs, unstable modes are exponentially growing in time and so are the associated fluxes. 
 The exponentially growing outputs stored in the database are therefore normalised to a dimensionless mode amplitude defined as:
 \begin{equation}
- A_f(k_x,k_y) = \frac{1}{2\pi}\sqrt{\int \left[|\hat{\phi}_N(k_x,k_y,\theta)|^2 + |\hat{A}_{\parallel N}(k_x,k_y,\theta)|^2  + |\hat{B}_{\parallel N}(k_x,k_y,\theta)|^2\right] \,\textrm{d}\theta}
+ A_f(k_x,k_y) = \sqrt{\frac{1}{2\pi}\left.\int \left[|\hat{\phi}_N(k_x,k_y,\theta)|^2 + |\hat{A}_{\parallel N}(k_x,k_y,\theta)|^2  + |\hat{B}_{\parallel N}(k_x,k_y,\theta)|^2\right] \,\textrm{d}\theta \right.}
 \end{equation}
-with the Fourrier components of the electrostatic potential and vector potential normalised as follows:
+with the Fourier components of the electrostatic potential and vector potential normalised as follows:
 \begin{equation}
   \hat{\phi}_N = \frac{1}{\rho_*}\frac{q_\tref}{T_\tref} \hat{\phi} \qquad \qquad 
   \hat{A}_{\parallel N}=\frac{1}{\rho_*^2}\frac{1}{L_\tref B_\tref} \hat{A}_\parallel \qquad \qquad
   \hat{B}_{\parallel N}=\frac{1}{\rho_*}\frac{1}{B_\tref} \hat{B}_\parallel
 \end{equation}
-where $\rho_*=\rho_\tref/L_\tref$. The integral over $\theta$ is performed over the full length of the flux-tube.\\
+where $\rho_*=\rho_\tref/L_\tref$. The integral over $\theta$ is performed over the full length of the flux-tube (it is equivalent to an integral over one poloidal turn of the sum of all connected $k_x$ modes).\\
 The value of the mode amplitude in a linear run has little meaning by itself and is not stored in the database. 
 
 \section{Mode growth rate and frequency}
@@ -469,11 +469,11 @@ For convenience, both the Laboratory frame and rotating frame fluxes are stored 
 \subsection{Normalisation}
 The fluxes are given for each Fourier mode, normalised to the corresponding (linear) mode amplitude and made dimensionless as follows:
 \begin{eqnarray}
- \Gamma_{Ns}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{\Gamma_s(k_x,k_y)}{n_\tref \vthref \rho_*^2}\\
- \Pi_{Ns}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{\Pi_s(k_x,k_y)}{n_\tref m_\tref L_\tref \vthref^2 \rho_*^2}\\
- Q_{Ns}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{Q_s(k_x,k_y)}{n_\tref T_\tref \vthref \rho_*^2}
+ \Gamma_{sN}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{\Gamma_s(k_x,k_y)}{n_s \vthref \rho_*^2}\\
+ \Pi_{sN}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{\Pi_s(k_x,k_y)}{n_s m_\tref L_\tref \vthref^2 \rho_*^2}\\
+ Q_{sN}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{Q_s(k_x,k_y)}{n_s T_\tref \vthref \rho_*^2}
 \end{eqnarray}
-In addition, the electrostatic magnetic flutter and magnetic compressions are stored separately (e.g. $\Gamma_{Ns}=\Gamma_{Ns,\phi}+\Gamma_{Ns,A_\parallel}+\Gamma_{Ns,B_\parallel}$) for each flux. Note that the $\rho_*^2$ factor is included in $A_f^2$.
+In addition, the electrostatic magnetic flutter and magnetic compressions are stored separately (e.g. $\Gamma_{Ns}=\Gamma_{Ns,\phi}+\Gamma_{Ns,A_\parallel}+\Gamma_{Ns,B_\parallel}$) for each flux. The fluxes are normalised with respect to $n_s(\theta=0)$ rather than $n_\tref$ to allow for trace species with zero density.
 
 \subsection{Summary of the fluxes outputs}
 \begin{tabularx}{\textwidth}{|L|S|S|S|}
@@ -521,12 +521,12 @@ Moments of the distribution function, expressed in the rotating frame, can also 
 \end{align*}
 with $J_0$ the Bessel function. The normalisation of the moments is given by:
 \begin{align*}
-\delta n_{sN} & = \frac{\delta n_s}{n_\tref A_f\rho_*}& \delta n_{sN}^{J_0} & = \frac{\delta n_s^{J_0}}{n_\tref A_f\rho_*} \\
-\delta v_{\parallel sN} & = \frac{\delta v_{\parallel s}}{\vthref A_f\rho_*}& \delta v_{\parallel sN}^{J_0} & = \frac{\delta v_{\parallel s}^{J_0}}{\vthref A_f\rho_*} \\
-\delta T_{\perp sN} & = \frac{\delta T_{\perp s}}{n_\tref T_\tref A_f\rho_*}& \delta T_{\perp sN}^{J_0} & = \frac{\delta T_{\perp s}^{J_0}}{n_\tref T_\tref A_f\rho_*} \\
-\delta T_{\parallel sN} & = \frac{\delta T_{\parallel s}}{n_\tref T_\tref A_f\rho_*}& \delta T_{\parallel sN}^{J_0} & = \frac{\delta T_{\parallel s}^{J_0}}{n_\tref T_\tref A_f\rho_*} 
+\delta n_{sN} & = \frac{\delta n_s}{n_s A_f\rho_*}& \delta n_{sN}^{J_0} & = \frac{\delta n_s^{J_0}}{n_s A_f\rho_*} \\
+\delta v_{\parallel sN} & = \frac{\delta v_{\parallel s}}{n_s\vthref A_f\rho_*}& \delta v_{\parallel sN}^{J_0} & = \frac{\delta v_{\parallel s}^{J_0}}{n_s\vthref A_f\rho_*} \\
+\delta T_{\perp sN} & = \frac{\delta T_{\perp s}}{n_s T_\tref A_f\rho_*}& \delta T_{\perp sN}^{J_0} & = \frac{\delta T_{\perp s}^{J_0}}{n_s T_\tref A_f\rho_*} \\
+\delta T_{\parallel sN} & = \frac{\delta T_{\parallel s}}{n_s T_\tref A_f\rho_*}& \delta T_{\parallel sN}^{J_0} & = \frac{\delta T_{\parallel s}^{J_0}}{n_s T_\tref A_f\rho_*} 
 \end{align*}
-
+As for the fluxes, the normalisation is with respect to $n_s(\theta=0)$ to allow for trace species with zero densities. 
 
 \subsection{Summary of the parallel outputs}
 \begin{tabularx}{\textwidth}{|L|R|R|Y|}
@@ -554,9 +554,9 @@ The derived quantities are computed internally when an entry is submitted to the
 \section{Relative fields amplitude}
 The ratio of each field to the total mode amplitude is stored:
 \begin{equation*}
-A_\phi = \sqrt{\int |\phi_{Nf}(\theta)|^2\,\textrm{d}\theta}, \qquad \qquad
-A_{A_\parallel} = \sqrt{\int |A_{\parallel Nf}(\theta)|^2\,\textrm{d}\theta}, \qquad \qquad
-A_{B_\parallel} = \sqrt{\int |B_{\parallel Nf}(\theta)|^2\,\textrm{d}\theta}, 
+A_\phi = \sqrt{\frac{1}{2\pi}\int |\phi_{Nf}(\theta)|^2\,\textrm{d}\theta}, \qquad \qquad
+A_{A_\parallel} = \sqrt{\frac{1}{2\pi}\int |A_{\parallel Nf}(\theta)|^2\,\textrm{d}\theta}, \qquad \qquad
+A_{B_\parallel} = \sqrt{\frac{1}{2\pi}\int |B_{\parallel Nf}(\theta)|^2\,\textrm{d}\theta}
 \end{equation*}
 
 \section{Fields parity}
