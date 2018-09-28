@@ -28,6 +28,8 @@ disp('4) filter out points with growth_rate_tolerance too large')
 
 
 %return
+endianness='b'; % Turing
+%endianness='l'; % Others
 
 % defaults
 if ~exist('flnm')||isempty(flnm)
@@ -465,8 +467,7 @@ disp('warning, need to solve the growth rate tolerance issue')
  test_bpar= ~G{ii}.CONTROL.nlbpar | isfield(G{ii}.DIAGNOSTIC,'kykxs_bpar')&&G{ii}.DIAGNOSTIC.kykxs_bpar==1;
  fields_prefix={'phi_','apar_','bpar_'};
  fields_normfac=[rhorat.*Trat./(Rrat.*qrat) rhorat.^2.*Brat./Rrat rhorat.*Brat./Rrat];
-disp('warning')
- if  0 & test_phi & test_apar & test_bpar % use kykxs diagnostics
+ if test_phi & test_apar & test_bpar % use kykxs diagnostics
    flpth_fields=gkwpath('kykxs_fields',proj);
    gkw_fields_names={'Phi','Apa','Bpa'};
    for ff=1:length(fields_prefix) 
@@ -477,11 +478,11 @@ disp('warning')
      if ~isempty(fl_num) 
        fid=fopen([flpth_fields flist{ii} '/' fl_num{end}{1} '_real']);
        frewind(fid);
-       dum_re=fread(fid,'double');
+       dum_re=fread(fid,Inf,'double',0,endianness); % Turing is big-endian, others little-endian
        fclose(fid);
        fid=fopen([flpth_fields flist{ii} '/' fl_num{end}{1} '_imag']);
        frewind(fid);
-       dum_im=fread(fid,'double');
+       dum_im=fread(fid,Inf,'double',0,endianness);
        fclose(fid);
        eval([fields_prefix{ff} 'gkw=dum_re+i.*dum_im;']);
        eval([fields_prefix{ff} 'gkdb=(dum_re(Ith)+i.*dum_im(Ith)).*fields_normfac(' num2str(ff) ');']);
@@ -553,7 +554,8 @@ disp('warning')
 
 
  %%% moments %%%
- flpth_moments={gkwpath('kykxs_moments',proj),gkwpath('kykxs_j0_moments',proj)};
+ %flpth_moments={gkwpath('kykxs_moments',proj),gkwpath('kykxs_j0_moments',proj)}; % to restore if moments are kept
+ flpth_moments={gkwpath('kykxs_j0_moments',proj)};
  gkw_moments_names={'dens_ga','vpar_ga','Tpar_ga','Tperp_ga'};
  gkdb_moments_names={'density_gyroaveraged','velocity_parallel_gyroaveraged','temperature_perpendicular_gyroaveraged','temperature_parallel_gyroaveraged'};
  for jj=1:nsp
@@ -571,19 +573,20 @@ disp('warning')
    if ~isempty(fl_num) 
     fid=fopen([flpth_moments{1+floor((mm-1)/4)} flist{ii} '/' fl_num{end}{1} '_real']);
     frewind(fid);
-    dum_re=fread(fid,'double');
+    dum_re=fread(fid,Inf,'double',0,endianness);
     fclose(fid);
     fid=fopen([flpth_moments{1+floor((mm-1)/4)} flist{ii} '/' fl_num{end}{1} '_imag']);
     frewind(fid);
-    dum_im=fread(fid,'double');
+    dum_im=fread(fid,Inf,'double',0,endianness);
     fclose(fid);
     out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame{jj}.([gkdb_moments_names{mm} '_real']) = dum_re.*moments_normfac(mm);
     out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame{jj}.([gkdb_moments_names{mm} '_imaginary']) = dum_im.*moments_normfac(mm);
    else 
-    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame = [];
-    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame = [];
-%    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame{jj}.([gkdb_moments_names{mm} '_real']) = NaN;
-%    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame{jj}.([gkdb_moments_names{mm} '_imaginary']) = NaN;
+    %out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame = [];
+    %out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame = [];
+    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame{jj}.([gkdb_moments_names{mm} '_real']) = NaN;
+    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame{jj}.([gkdb_moments_names{mm} '_imaginary']) = NaN;
+
    end
   end
  end 
