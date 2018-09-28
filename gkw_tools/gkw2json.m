@@ -24,6 +24,9 @@ function [out,is_ok,ok_msg]=gkw2json(flnm,proj,flpth_json,comments,N_shape,flpth
 
 disp('To do: 1) change nrat definition to include centrifugal correction 2) use nrat and Trat in beta transformation')
 disp('3) also use qrat, nrat, Trat for collisionality calculation')
+disp('4) filter out points with growth_rate_tolerance too large')
+
+
 %return
 
 % defaults
@@ -113,25 +116,6 @@ for iN=1:Nout % loop over output files
  II=find(ii_out==iN);
  nsp = G{II(1)}.GRIDSIZE.number_of_species; % number of kinetic species
  
- % initialise arrays for fluxes and moments (with 1 eigenvalue only)
- out{iN}.fluxes_norm.axes={'species'  'wavevector'  'eigenmode'};
- out{iN}.fluxes_norm.particle_flux_phi_potential=zeros(nsp,length(II),1);
- out{iN}.fluxes_norm.particle_flux_a_field_parallel=zeros(nsp,length(II),1);
- out{iN}.fluxes_norm.particle_flux_b_field_parallel=zeros(nsp,length(II),1);
- out{iN}.fluxes_norm.momentum_flux_phi_potential=zeros(nsp,length(II),1);
- out{iN}.fluxes_norm.momentum_flux_a_field_parallel=zeros(nsp,length(II),1);
- out{iN}.fluxes_norm.momentum_flux_b_field_parallel=zeros(nsp,length(II),1);
- out{iN}.fluxes_norm.energy_flux_phi_potential=zeros(nsp,length(II),1);
- out{iN}.fluxes_norm.energy_flux_a_field_parallel=zeros(nsp,length(II),1);
- out{iN}.fluxes_norm.energy_flux_b_field_parallel=zeros(nsp,length(II),1);
-
- gkdb_moments_names={'density_gyroaveraged','velocity_parallel_gyroaveraged','temperature_perpendicular_gyroaveraged','temperature_parallel_gyroaveraged'};
- for mm=1:length(gkdb_moments_names) 
-  out{iN}.moments_norm_rotating_frame.([gkdb_moments_names{mm} '_real'])=zeros(Ggeom{II(1)}.ns,nsp,length(II),1);
-  out{iN}.moments_norm_rotating_frame.([gkdb_moments_names{mm} '_imaginary'])=zeros(Ggeom{II(1)}.ns,nsp,length(II),1);
- end
- out{iN}.moments_norm_rotating_frame.axes={'poloidal_angle_grid'  'species'  'wavevector'  'eigenmode'};
-
  for jN=1:length(II)  % loop over wavevectors
    ii=II(jN);
 
@@ -228,7 +212,7 @@ for iN=1:Nout % loop over output files
 
  out{iN}.flux_surface.r_minor_norm = r0; 
  out{iN}.flux_surface.q       = (-sb_gkw).*(-sj_gkw).*Ggeom{ii}.q;
- out{iN}.flux_surface.magnetic_shear = Ggeom{ii}.shat;
+ out{iN}.flux_surface.magnetic_shear_r_minor = Ggeom{ii}.shat;
  out{iN}.flux_surface.b_field_tor_sign = -sb_gkw;
  out{iN}.flux_surface.ip_sign = -sj_gkw;
  out{iN}.flux_surface.pressure_gradient_norm  = -beta_pr_gkw.*Brat.^2./Rrat;
@@ -286,14 +270,21 @@ for iN=1:Nout % loop over output files
 
  %%% Type of run %%%
  if strcmp(upper(G{ii}.CONTROL.method),'EXP')
-  out{iN}.code.initial_value_run=1;
+  out{iN}.model.initial_value_run=1;
   nb_eiv=1;
  else
   is_ok(ii)=0;
   ok_msg{ii}='Implicit or eigenvalue runs not handled yet';
   continue
  end
- 
+ if G{ii}.CONTROL.non_linear==0
+  out{iN}.model.non_linear_run=0;
+ else
+  is_ok(ii)=0;
+  ok_msg{ii}='Non linear runs not handled yet';
+  continue
+ end
+
  %%% Modes %%%% 
  out{iN}.wavevector{jN}.poloidal_turns = G{ii}.GRIDSIZE.nperiod.*2-1;
  rhorat=mrat.*vthrat./qrat./Brat; % rhoref_GKW./rhoref_GKDB
@@ -431,18 +422,27 @@ for iN=1:Nout % loop over output files
  for kk=1:nb_eiv   % for initial value runs, nb_eiv=1
 
  %%% growth rate and mode frequency %%%
- out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate = gamma(ii).*vthrat./Rrat; 
- out{iN}.wavevector{jN}.eigenmode{kk}.frequency = sj_gkw.*freq(ii).*vthrat./Rrat;
+ out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_norm = gamma(ii).*vthrat./Rrat; 
+ out{iN}.wavevector{jN}.eigenmode{kk}.frequency_norm = sj_gkw.*freq(ii).*vthrat./Rrat;
  
  dum=load([gkwpath('time',proj) flist{ii}]);
  t=dum(:,1);
  g=dum(:,2);
- Delta_t=3./gamma(ii);
+ Delta_t=3./(0.01+abs(gamma(ii)));
  I=iround(t,t(end)-Delta_t);
- out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance=sqrt(trapz(t(I:end),(g(I:end)-gamma(ii)).^2)./Delta_t)./gamma(ii);
+ out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance=sqrt(trapz(t(I:end),(g(I:end)-gamma(ii)).^2)./Delta_t)./abs(gamma(ii));
+% out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance=sqrt(trapz(t(I:end),(g(I:end)-gamma(ii)).^2)./Delta_t);
+% out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance=sqrt(trapz(t(I:end),(exp(g(I:end).*t(I:end))-exp(gamma(ii).*t(I:end))).^2)./Delta_t)./exp(gamma(ii).*t(end));
+disp('warning, need to solve the growth rate tolerance issue')
  if out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance==0
   out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance=1e-6;
  end
+% if out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance>0.
+%  is_ok(ii)=0;
+%    ok_msg{ii}=['Growth rate tolerance too large (>10%): ' num2str(out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance)];
+%    continue
+% end
+ 
  %%% eigenfunctions %%%
  n_turn = 2*G{ii}.GRIDSIZE.nperiod-1;
  ns_per_turn = G{ii}.GRIDSIZE.n_s_grid ./ n_turn;
@@ -465,7 +465,8 @@ for iN=1:Nout % loop over output files
  test_bpar= ~G{ii}.CONTROL.nlbpar | isfield(G{ii}.DIAGNOSTIC,'kykxs_bpar')&&G{ii}.DIAGNOSTIC.kykxs_bpar==1;
  fields_prefix={'phi_','apar_','bpar_'};
  fields_normfac=[rhorat.*Trat./(Rrat.*qrat) rhorat.^2.*Brat./Rrat rhorat.*Brat./Rrat];
- if  test_phi & test_apar & test_bpar % use kykxs diagnostics
+disp('warning')
+ if  0 & test_phi & test_apar & test_bpar % use kykxs diagnostics
    flpth_fields=gkwpath('kykxs_fields',proj);
    gkw_fields_names={'Phi','Apa','Bpa'};
    for ff=1:length(fields_prefix) 
@@ -554,6 +555,7 @@ for iN=1:Nout % loop over output files
  %%% moments %%%
  flpth_moments={gkwpath('kykxs_moments',proj),gkwpath('kykxs_j0_moments',proj)};
  gkw_moments_names={'dens_ga','vpar_ga','Tpar_ga','Tperp_ga'};
+ gkdb_moments_names={'density_gyroaveraged','velocity_parallel_gyroaveraged','temperature_perpendicular_gyroaveraged','temperature_parallel_gyroaveraged'};
  for jj=1:nsp
   if jj<10
    str=['0' num2str(jj)];
@@ -575,8 +577,13 @@ for iN=1:Nout % loop over output files
     frewind(fid);
     dum_im=fread(fid,'double');
     fclose(fid);
-    out{iN}.moments_norm_rotating_frame.([gkdb_moments_names{mm} '_real'])(:,jj,jN,kk) = dum_re.*moments_normfac(mm);
-    out{iN}.moments_norm_rotating_frame.([gkdb_moments_names{mm} '_imaginary'])(:,jj,jN,kk) = dum_im.*moments_normfac(mm);
+    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame{jj}.([gkdb_moments_names{mm} '_real']) = dum_re.*moments_normfac(mm);
+    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame{jj}.([gkdb_moments_names{mm} '_imaginary']) = dum_im.*moments_normfac(mm);
+   else 
+    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame = [];
+    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame = [];
+%    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame{jj}.([gkdb_moments_names{mm} '_real']) = NaN;
+%    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame{jj}.([gkdb_moments_names{mm} '_imaginary']) = NaN;
    end
   end
  end 
@@ -595,32 +602,33 @@ for iN=1:Nout % loop over output files
  
    dims_fl = size(pflux.es); 
    dum=reshape(pflux.es,[],dims_fl(end));
-   out{iN}.fluxes_norm.particle_flux_phi_potential(jj,jN,kk) = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.particle_flux_phi_potential = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
    dum=reshape(pflux.em,[],dims_fl(end));
-   out{iN}.fluxes_norm.particle_flux_a_field_parallel(jj,jN,kk) = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.particle_flux_a_field_parallel = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
    dum=reshape(pflux.bpar,[],dims_fl(end));
-   out{iN}.fluxes_norm.particle_flux_b_field_parallel(jj,jN,kk) = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.particle_flux_b_field_parallel = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
 
    dims_fl = size(vflux.eslab); 
    dum=reshape(vflux.eslab,[],dims_fl(end));
-   out{iN}.fluxes_norm.momentum_flux_phi_potential(jj,jN,kk) = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_flux_phi_potential = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
    dum=reshape(vflux.emlab,[],dims_fl(end));
-   out{iN}.fluxes_norm.momentum_flux_a_field_parallel(jj,jN,kk) = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_flux_a_field_parallel = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
    dum=reshape(vflux.bparlab,[],dims_fl(end));
-   out{iN}.fluxes_norm.momentum_flux_b_field_parallel(jj,jN,kk) = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_flux_b_field_parallel = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
 
    dims_fl = size(eflux.eslab); 
    dum=reshape(eflux.eslab,[],dims_fl(end));
-   out{iN}.fluxes_norm.energy_flux_phi_potential(jj,jN,kk) = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.energy_flux_phi_potential = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
    dum=reshape(eflux.emlab,[],dims_fl(end));
-   out{iN}.fluxes_norm.energy_flux_a_field_parallel(jj,jN,kk) = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.energy_flux_a_field_parallel = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
    dum=reshape(eflux.bparlab,[],dims_fl(end));
-   out{iN}.fluxes_norm.energy_flux_b_field_parallel(jj,jN,kk) = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.energy_flux_b_field_parallel = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
 
   end
  end
- 
 
+ % empty for linear runs 
+ out{iN}.total_fluxes_norm=[];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Meta-data
 
@@ -677,23 +685,6 @@ for iN=1:Nout % loop over output files
  if isempty(Iwok)
    out{iN}=[];
  else
-   out{iN}.fluxes_norm.particle_flux_phi_potential=out{iN}.fluxes_norm.particle_flux_phi_potential(:,Iwok,:);
-   out{iN}.fluxes_norm.particle_flux_a_field_parallel=out{iN}.fluxes_norm.particle_flux_a_field_parallel(:,Iwok,:);
-   out{iN}.fluxes_norm.particle_flux_b_field_parallel=out{iN}.fluxes_norm.particle_flux_b_field_parallel(:,Iwok,:);
-
-   out{iN}.fluxes_norm.momentum_flux_phi_potential=out{iN}.fluxes_norm.momentum_flux_phi_potential(:,Iwok,:);
-   out{iN}.fluxes_norm.momentum_flux_a_field_parallel=out{iN}.fluxes_norm.momentum_flux_a_field_parallel(:,Iwok,:);
-   out{iN}.fluxes_norm.momentum_flux_b_field_parallel=out{iN}.fluxes_norm.momentum_flux_b_field_parallel(:,Iwok,:);
-
-   out{iN}.fluxes_norm.energy_flux_phi_potential=out{iN}.fluxes_norm.energy_flux_phi_potential(:,Iwok,:);
-   out{iN}.fluxes_norm.energy_flux_a_field_parallel=out{iN}.fluxes_norm.energy_flux_a_field_parallel(:,Iwok,:);
-   out{iN}.fluxes_norm.energy_flux_b_field_parallel=out{iN}.fluxes_norm.energy_flux_b_field_parallel(:,Iwok,:);
-
-   for mm=1:length(gkdb_moments_names) 
-    out{iN}.moments_norm_rotating_frame.([gkdb_moments_names{mm} '_real']) = out{iN}.moments_norm_rotating_frame.([gkdb_moments_names{mm} '_real'])(:,:,Iwok,:);
-    out{iN}.moments_norm_rotating_frame.([gkdb_moments_names{mm} '_imaginary']) = out{iN}.moments_norm_rotating_frame.([gkdb_moments_names{mm} '_imaginary'])(:,:,Iwok,:);
-   end
-
    dum={out{iN}.wavevector{Iwok}};
    out{iN}=rmfield(out{iN},'wavevector');
    out{iN}.wavevector=dum;
@@ -701,14 +692,13 @@ for iN=1:Nout % loop over output files
 end
 
 % order fields
-top_fields_order={'ids_properties','code','model','flux_surface','species','species_all','collisions','wavevector','fluxes_norm','moments_norm_rotating_frame'};
+top_fields_order={'ids_properties','code','model','flux_surface','species','species_all','collisions','wavevector','total_fluxes_norm'};
 for iN=1:Nout % loop over output files
   if ~isempty(out{iN})
     out{iN}=orderfields(out{iN},top_fields_order);
   end
 end
 
-% still need to add collisions table
 
 %%%%%%%%%%%%%%%%%%
 % write JSON files
