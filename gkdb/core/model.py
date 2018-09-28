@@ -1,5 +1,6 @@
 import sys
 from collections import OrderedDict
+from warnings import warn
 from IPython import embed
 if sys.version_info < (3, 0):
     print('Python 2')
@@ -192,69 +193,78 @@ class Ids_properties(BaseModel):
 
     @classmethod
     @db.atomic()
-    def from_dict(cls, model_dict):
-        if not check_ids_entry(model_dict):
+    def from_dict(cls, model_dict, raise_on_disallowance=True):
+        if raise_on_disallowance:
+            on_disallowance = 'raise_at_end'
+        else:
+            on_disallowance = 'print_at_end'
+        allow_entry = check_ids_entry(model_dict, on_disallowance=on_disallowance)
+        if not allow_entry:
             raise Exception('Point rejected')
         ids_prop = model_dict.pop('ids_properties')
-        ids_prop['date'] = datetime.datetime.now()
+        ids_prop['creation_date'] = datetime.datetime.now()
         ids_properties = dict_to_model(Ids_properties, ids_prop)
         ids_properties.save()
+
+        for simple in [Code, Model, Species_all, Flux_surface]:
+            name = simple.__name__.lower()
+            entry = dict_to_model(simple, model_dict.pop(name))
+            entry.ids_properties = ids_properties
+            entry.save(force_insert=True)
 
         specieses = []
         for species_dict in model_dict.pop('species'):
             species = dict_to_model(Species, species_dict)
-            species.ids_properties = point
+            species.ids_properties = ids_properties
             species.save()
             specieses.append(species)
 
-        for simple in [Code, Species_Global, Flux_Surface]:
-            name = simple.__name__.lower()
-            entry = dict_to_model(simple, model_dict.pop(name))
-            entry.ids_properties = point
-            entry.save(force_insert=True)
+        n_sp = len(specieses)
+        collisions = model_dict.pop('collisions')
+        for ii in range(n_sp):
+            for jj in range(n_sp):
+                entry_dict = {}
+                for field, array in collisions.items():
+                    entry_dict[field] = array[ii][jj]
+                Collisions.create(species1_id=specieses[ii],
+                                  species2_id=specieses[jj],
+                                  **entry_dict)
 
-        eigenvalues = []
-        for ii, wavevector_dict in enumerate(model_dict.pop('wavevectors')):
-            eigenvalues.append([])
-            eigenvalues_dict = wavevector_dict.pop('eigenvalues')
-            wavevector = dict_to_model(Wavevector, wavevector_dict)
-            wavevector.ids_properties = point
-            wavevector.save()
-            for jj, eigenvalue_dict in enumerate(eigenvalues_dict):
-                eigenvector = dict_to_model(Eigenvector, eigenvalue_dict.pop('eigenvector'))
-                eigenvalue = dict_to_model(Eigenvalue, eigenvalue_dict)
-                eigenvalue.wavevector = wavevector
-                eigenvalue.save()
-                eigenvector.eigenvalue = eigenvalue
-                eigenvector.save(force_insert=True)
-
-                eigenvalues[ii].append(eigenvalue)
-
-
-        for flux_table in [Particle_Fluxes,
-                           Heat_Fluxes_Lab, Heat_Fluxes_Rotating,
-                           Momentum_Fluxes_Lab, Momentum_Fluxes_Rotating,
-                           Moments_Rotating]:
-            name = flux_table.__name__.lower()
-            flux_dict = model_dict.pop(name)
-            axes = flux_dict.pop('axes')
-            ds = xr.Dataset()
-            for varname, data in flux_dict.items():
-                ds = ds.merge(xr.Dataset({varname: (axes, data)}))
-            df = ds.to_dataframe()
-            if "poloidal_angle" in axes:
-                df = df.unstack('poloidal_angle')
-            for index, row in df.iterrows():
-                ind = dict(zip(df.index.names,index))
-                if "poloidal_angle" in axes:
-                    row = row.unstack()
-                    entry = dict_to_model(flux_table, {name: val for name, val in zip(row.index, row.as_matrix().tolist())})
-                else:
-                    entry = dict_to_model(flux_table, row)
-                entry.species = specieses[ind['species']]
-                entry.eigenvalue = eigenvalues[ind['wavevector']][ind['eigenvalue']]
+        for wv_idx, wavevector_dict in enumerate(model_dict.pop('wavevector')):
+            eigenmodes = wavevector_dict.pop('eigenmode')
+            wv = dict_to_model(Wavevector, wavevector_dict)
+            wv.ids_properties = ids_properties
+            wv.save()
+            for eig_idx, eigenmode_dict in enumerate(eigenmodes):
+                fluxlike = {}
+                for table in [Fluxes_norm, Moments_norm_rotating_frame]:
+                    name = table.__name__.lower()
+                    if len(eigenmode_dict[name]) > 0:
+                        fluxlike[table] = eigenmode_dict.pop(name)
+                    else:
+                        del eigenmode_dict[name]
+                eig = dict_to_model(Eigenmode, eigenmode_dict)
+                eig.wavevector = wv
+                eig.save()
+                for table, entry_dict in fluxlike.items():
+                    for sp_idx, sp_entry in enumerate(entry_dict):
+                        entry = dict_to_model(table, sp_entry)
+                        entry.species = specieses[sp_idx]
+                        entry.eigenmode = eig
+                        entry.save(force_insert=True)
+        if len(model_dict['total_fluxes_norm']) != 0:
+            for sp_idx, sp_entry in enumerate(model_dict.pop('total_fluxes_norm')):
+                entry = dict_to_model(table, sp_entry)
+                entry.species = specieses[sp_idx]
+                entry.ids_properties = ids_properties
                 entry.save(force_insert=True)
-        return point
+        else:
+            del model_dict['total_fluxes_norm']
+
+        if len(model_dict) != 0:
+            warn('Could not read full model_dict! Ignoring {!s}'.format(model_dict.keys()))
+
+        return ids_properties
 
     def to_json(self, path):
         with open(path, 'w') as file_:
