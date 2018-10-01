@@ -192,74 +192,76 @@ class Ids_properties(BaseModel):
 
 
     @classmethod
-    @db.atomic()
     def from_dict(cls, model_dict, raise_on_disallowance=True):
-        if raise_on_disallowance:
-            on_disallowance = 'raise_at_end'
-        else:
-            on_disallowance = 'print_at_end'
-        allow_entry = check_ids_entry(model_dict, on_disallowance=on_disallowance)
-        if not allow_entry:
-            raise Exception('Point rejected')
-        ids_prop = model_dict.pop('ids_properties')
-        ids_prop['creation_date'] = datetime.datetime.now()
-        ids_properties = dict_to_model(Ids_properties, ids_prop)
-        ids_properties.save()
+        with cls._meta.database.atomic():
+            if raise_on_disallowance:
+                on_disallowance = 'raise_at_end'
+            else:
+                on_disallowance = 'print_at_end'
+            allow_entry = check_ids_entry(model_dict, on_disallowance=on_disallowance)
+            if not allow_entry:
+                raise Exception('Point rejected')
+            ids_prop = model_dict.pop('ids_properties')
+            ids_prop['creation_date'] = datetime.datetime.now()
+            ids_properties = dict_to_model(Ids_properties, ids_prop)
+            ids_properties.save()
 
-        for simple in [Code, Model, Species_all, Flux_surface]:
-            name = simple.__name__.lower()
-            entry = dict_to_model(simple, model_dict.pop(name))
-            entry.ids_properties = ids_properties
-            entry.save(force_insert=True)
-
-        specieses = []
-        for species_dict in model_dict.pop('species'):
-            species = dict_to_model(Species, species_dict)
-            species.ids_properties = ids_properties
-            species.save()
-            specieses.append(species)
-
-        n_sp = len(specieses)
-        collisions = model_dict.pop('collisions')
-        for ii in range(n_sp):
-            for jj in range(n_sp):
-                entry_dict = {}
-                for field, array in collisions.items():
-                    entry_dict[field] = array[ii][jj]
-                Collisions.create(species1_id=specieses[ii],
-                                  species2_id=specieses[jj],
-                                  **entry_dict)
-
-        for wv_idx, wavevector_dict in enumerate(model_dict.pop('wavevector')):
-            eigenmodes = wavevector_dict.pop('eigenmode')
-            wv = dict_to_model(Wavevector, wavevector_dict)
-            wv.ids_properties = ids_properties
-            wv.save()
-            for eig_idx, eigenmode_dict in enumerate(eigenmodes):
-                fluxlike = {}
-                for table in [Fluxes_norm, Moments_norm_rotating_frame]:
-                    name = table.__name__.lower()
-                    if len(eigenmode_dict[name]) > 0:
-                        fluxlike[table] = eigenmode_dict.pop(name)
-                    else:
-                        del eigenmode_dict[name]
-                eig = dict_to_model(Eigenmode, eigenmode_dict)
-                eig.wavevector = wv
-                eig.save()
-                for table, entry_dict in fluxlike.items():
-                    for sp_idx, sp_entry in enumerate(entry_dict):
-                        entry = dict_to_model(table, sp_entry)
-                        entry.species = specieses[sp_idx]
-                        entry.eigenmode = eig
-                        entry.save(force_insert=True)
-        if len(model_dict['total_fluxes_norm']) != 0:
-            for sp_idx, sp_entry in enumerate(model_dict.pop('total_fluxes_norm')):
-                entry = dict_to_model(table, sp_entry)
-                entry.species = specieses[sp_idx]
+            for simple in [Code, Model, Species_all, Flux_surface]:
+                name = simple.__name__.lower()
+                entry = dict_to_model(simple, model_dict.pop(name))
                 entry.ids_properties = ids_properties
                 entry.save(force_insert=True)
-        else:
-            del model_dict['total_fluxes_norm']
+
+            specieses = []
+            for species_dict in model_dict.pop('species'):
+                species = dict_to_model(Species, species_dict)
+                species.ids_properties = ids_properties
+                species.save()
+                specieses.append(species)
+
+            n_sp = len(specieses)
+            collisions = model_dict.pop('collisions')
+            for ii in range(n_sp):
+                for jj in range(n_sp):
+                    entry_dict = {}
+                    for field, array in collisions.items():
+                        entry_dict[field] = array[ii][jj]
+                    Collisions.create(species1_id=specieses[ii],
+                                      species2_id=specieses[jj],
+                                      **entry_dict)
+
+            for wv_idx, wavevector_dict in enumerate(model_dict.pop('wavevector')):
+                eigenmodes = wavevector_dict.pop('eigenmode')
+                wv = dict_to_model(Wavevector, wavevector_dict)
+                wv.ids_properties = ids_properties
+                wv.save()
+                for eig_idx, eigenmode_dict in enumerate(eigenmodes):
+                    fluxlike = {}
+                    for table in [Fluxes_norm, Moments_norm_rotating_frame]:
+                        name = table.__name__.lower()
+                        if len(eigenmode_dict[name]) > 0:
+                            fluxlike[table] = eigenmode_dict.pop(name)
+                        else:
+                            del eigenmode_dict[name]
+                    eig = dict_to_model(Eigenmode, eigenmode_dict)
+                    eig.wavevector = wv
+                    eig.save()
+                    for table, entry_dict in fluxlike.items():
+                        for sp_idx, sp_entry in enumerate(entry_dict):
+                            entry = dict_to_model(table, sp_entry)
+                            entry.species = specieses[sp_idx]
+                            entry.eigenmode = eig
+                            entry.save(force_insert=True)
+            if len(model_dict['total_fluxes_norm']) != 0:
+                # Add check! Only if non-linear!
+                for sp_idx, sp_entry in enumerate(model_dict.pop('total_fluxes_norm')):
+                    # Check if all NaNs, don't create entry. Check if true for all species!
+                    entry = dict_to_model(table, sp_entry)
+                    entry.species = specieses[sp_idx]
+                    entry.ids_properties = ids_properties
+                    entry.save(force_insert=True)
+            else:
+                del model_dict['total_fluxes_norm']
 
         if len(model_dict) != 0:
             warn('Could not read full model_dict! Ignoring {!s}'.format(model_dict.keys()))
@@ -427,6 +429,14 @@ class Moments_norm_rotating_frame(BaseModel):
     # Always optional
     species = ForeignKeyField(Species, related_name='moments_rotating')
     eigenmode = ForeignKeyField(Eigenmode, related_name='moments_rotating')
+    density_real = ArrayField(FloatField,help_text='Real part of the density moment of the gyrocenter distribution function in the rotating frame')
+    density_imaginary = ArrayField(FloatField,help_text='Imaginary part of the density moment of the gyrocenter distribution function in the rotating frame')
+    velocity_parallel_real = ArrayField(FloatField,help_text='Real part of the parallel velocity  moment of the gyrocenter distribution function in the rotating frame')
+    velocity_parallel_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel velocity  moment of the gyrocenter distribution function in the rotating frame')
+    temperature_parallel_real = ArrayField(FloatField,help_text='Real part of the parallel temperature  moment of the gyrocenter distribution function in the rotating frame')
+    temperature_parallel_imaginary = ArrayField(FloatField,help_text='Imaginary part of the parallel temperature  moment of the gyrocenter distribution function in the rotating frame')
+    temperature_perpendicular_real = ArrayField(FloatField,help_text='Real part of the perpendicular temperature moment of the gyrocenter distribution function in the rotating frame')
+    temperature_perpendicular_imaginary = ArrayField(FloatField,help_text='Imaginary part of the perpendicular temperature moment of the gyrocenter distribution function in the rotating frame')
     density_gyroaveraged_real = ArrayField(FloatField,help_text='Real part of the density moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
     density_gyroaveraged_imaginary = ArrayField(FloatField,help_text='Imaginary part of the density moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
     velocity_parallel_gyroaveraged_real = ArrayField(FloatField,help_text='Real part of the parallel velocity moment of the gyrocenter distribution function times the Bessel function J_0 in the rotating frame')
