@@ -570,6 +570,18 @@ Different entries can be grouped together by giving them a common tag. This can 
  
 
 \chapter{Outputs}
+
+\section{Generalities}
+\begin{itemize}
+ \item For \textit{linear} runs, all outputs are normalised to a dimensionless amplitude defined in the next section.  The mode growth rate, frequency and convergence criterion (tolerance) are only filled for linear runs.
+  \begin{itemize}
+   \item For \textit{initial value} runs, there is only one eigenmode per wavevector (the most unstable mode) and the outputs are given at the last time step of the simulation (no time dependent information is stored)
+   \item For \textit{eigenvalue} runs, there can be several eigenmodes per wavevector
+  \end{itemize}	  
+ \item For \textit{non-linear} runs, all outputs are time averaged over the interval $\texttt{time\_interval\_norm}$ specified in the $\texttt{model}$ table.\\ 
+ The \texttt{total\_fluxes\_norm} table, containing the fluxes summed over $k_x$ and $k_y$, is only filled for non-linear runs.
+\end{itemize}
+
 \section{Mode amplitude}
 In linear runs, unstable modes are exponentially growing in time and so are the associated fluxes. 
 The exponentially growing outputs stored in the database are therefore normalised to a dimensionless mode amplitude defined as:
@@ -583,24 +595,23 @@ with the Fourier components of the electrostatic potential and vector potential 
   \hat{B}_{\parallel N}=\frac{1}{\rho_*}\frac{1}{B_\tref} \hat{B}_\parallel
 \end{equation}
 where $\rho_*=\rho_\tref/L_\tref$. The integral over $\theta$ is performed over the full length of the flux-tube (it is equivalent to an integral over one poloidal turn of the sum of all connected $k_x$ modes).\\
-The value of the mode amplitude in a linear run has little meaning by itself and is not stored in the database. 
+The value of the mode amplitude in a linear run has little meaning by itself and is not stored in the database.\\
+For non-linear runs, the dimensionless mode amplitude is taken to be 
+$$A_f(k_x,k_y) = 1$$
 
 \section{Mode growth rate and frequency} \label{sec:eigenvalues}
-The normalisations of the mode growth rate $\gamma$ and frequency $\omega_r$ are:
-\begin{equation}
- \gamma_N(k_x,k_y) = \gamma(k_x,k_y) \frac{L_\tref}{v_\textrm{thref}} \qquad \qquad \textrm{and} \qquad \qquad \omega_{rN}(k_x,k_y) = \omega_r(k_x,k_y) \frac{L_\tref}{v_\textrm{thref}}
-\end{equation}
+The normalised mode growth rate $\gamma$ and frequency $\omega_r$ are defined as:
+\begin{align*}
+ \texttt{growth\_rate\_norm}&=\gamma_N(k_x,k_y) = \gamma(k_x,k_y) \frac{L_\tref}{v_\textrm{thref}}\\
+ \texttt{frequency\_norm}&=\omega_{rN}(k_x,k_y) = \omega_r(k_x,k_y) \frac{L_\tref}{v_\textrm{thref}}
+\end{align*}
 By convention, unstable modes have a positive growth rate and modes propagating in the ion diamagnetic drift direction have a positive frequency (and therefore a negative frequency when they are propagating in the electron diamagnetic drift direction).\\
-
 For initial value runs, the following (post-processing) method is used to determine the tolerance on the run convergence:
-$$\gamma_\textrm{tol} = \frac{1}{|\gamma_f|}\sqrt{\frac{1}{\Delta t}\int_{t_f-\Delta t}^{t_f} \left[\gamma(t)-\gamma_f\right]^2\,\textrm{dt}}$$
+$$\texttt{growth\_rate\_tolerance}=\gamma_\textrm{tol} = \frac{1}{|\gamma_f|}\sqrt{\frac{1}{\Delta t}\int_{t_f-\Delta t}^{t_f} \left[\gamma(t)-\gamma_f\right]^2\,\textrm{dt}}$$
 where $t_f$ and $\gamma_f$ are the time and growth rate at the end of the simulation, respectively, $\Delta t = 3/(0.01+|\gamma_f|)$ and
 $$\gamma(t)=\frac{1}{\delta t}[\ln{A_f(t)}-\ln{A_f(t-\delta t)}]$$
-with $\delta t$ depending on the code setup but in any case several times smaller than $\Delta t$. Note that any exponentially growing quantity can be used in place of $A_f$ to compute the time dependent growth rate.
-
-To update.
-For initial value runs, $N_\textrm{modes}=1$ and only the linear outputs corresponding to the most unstable run are given. When the eigenvalue solver is used $N_\textrm{modes}$ indicates the number of modes for which the linear outputs are given. The tolerance on the growth rate still needs to be defined when an eigenvalue solver is used (input welcome!).
-
+with $\delta t$ depending on the code setup but in any case several times smaller than $\Delta t$. Note that any exponentially growing quantity can be used in place of $A_f$ to compute the time dependent growth rate.\\
+The tolerance on the growth rate still needs to be defined in a code independent way when an eigenvalue solver is used (input welcome!).
 
 
 
