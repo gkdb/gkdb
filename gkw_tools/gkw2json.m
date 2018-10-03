@@ -24,7 +24,12 @@ function [out,is_ok,ok_msg]=gkw2json(flnm,proj,flpth_json,comments,N_shape,flpth
 
 disp('To do: 1) change nrat definition to include centrifugal correction 2) use nrat and Trat in beta transformation')
 disp('3) also use qrat, nrat, Trat for collisionality calculation')
+disp('4) filter out points with growth_rate_tolerance too large')
+
+
 %return
+endianness='b'; % Turing
+%endianness='l'; % Others
 
 % defaults
 if ~exist('flnm')||isempty(flnm)
@@ -113,37 +118,6 @@ for iN=1:Nout % loop over output files
  II=find(ii_out==iN);
  nsp = G{II(1)}.GRIDSIZE.number_of_species; % number of kinetic species
  
- % initialise arrays for fluxes and moments (with 1 eigenvalue only)
- out{iN}.particle_fluxes.phi_potential=zeros(nsp,length(II),1);
- out{iN}.particle_fluxes.a_parallel=zeros(nsp,length(II),1);
- out{iN}.particle_fluxes.b_field_parallel=zeros(nsp,length(II),1);
- out{iN}.particle_fluxes.axes={'species'  'wavevector'  'eigenvalue'};
-
- out{iN}.momentum_fluxes_lab.phi_potential=zeros(nsp,length(II),1);
- out{iN}.momentum_fluxes_lab.a_parallel=zeros(nsp,length(II),1);
- out{iN}.momentum_fluxes_lab.b_field_parallel=zeros(nsp,length(II),1);
- out{iN}.momentum_fluxes_lab.axes={'species'  'wavevector'  'eigenvalue'};
- out{iN}.momentum_fluxes_rotating.phi_potential=zeros(nsp,length(II),1);
- out{iN}.momentum_fluxes_rotating.a_parallel=zeros(nsp,length(II),1);
- out{iN}.momentum_fluxes_rotating.b_field_parallel=zeros(nsp,length(II),1);
- out{iN}.momentum_fluxes_rotating.axes={'species' 'wavevector'  'eigenvalue'};
-
- out{iN}.heat_fluxes_lab.phi_potential=zeros(nsp,length(II),1);
- out{iN}.heat_fluxes_lab.a_parallel=zeros(nsp,length(II),1);
- out{iN}.heat_fluxes_lab.b_field_parallel=zeros(nsp,length(II),1);
- out{iN}.heat_fluxes_lab.axes={'species'  'wavevector'  'eigenvalue'};
- out{iN}.heat_fluxes_rotating.phi_potential=zeros(nsp,length(II),1);
- out{iN}.heat_fluxes_rotating.a_parallel=zeros(nsp,length(II),1);
- out{iN}.heat_fluxes_rotating.b_field_parallel=zeros(nsp,length(II),1);
- out{iN}.heat_fluxes_rotating.axes={'species'  'wavevector'  'eigenvalue'};
-
- gkdb_moments_names={'density','parallel_velocity','perpendicular_temperature','parallel_temperature','j0_density','j0_parallel_velocity','j0_perpendicular_temperature','j0_parallel_temperature'};
- for mm=1:length(gkdb_moments_names) 
-  out{iN}.moments_rotating.(['r_' gkdb_moments_names{mm}])=zeros(Ggeom{II(1)}.ns,nsp,length(II),1);
-  out{iN}.moments_rotating.(['i_' gkdb_moments_names{mm}])=zeros(Ggeom{II(1)}.ns,nsp,length(II),1);
- end
- out{iN}.moments_rotating.axes={'poloidal_angle'  'species'  'wavevector'  'eigenvalue'};
-
  for jN=1:length(II)  % loop over wavevectors
    ii=II(jN);
 
@@ -238,16 +212,16 @@ for iN=1:Nout % loop over output files
  sb_gkw = G{ii}.GEOM.signb;
  sj_gkw = G{ii}.GEOM.signj;
 
- out{iN}.flux_surface.r_minor = r0; 
+ out{iN}.flux_surface.r_minor_norm = r0; 
  out{iN}.flux_surface.q       = (-sb_gkw).*(-sj_gkw).*Ggeom{ii}.q;
- out{iN}.flux_surface.magnetic_shear = Ggeom{ii}.shat;
+ out{iN}.flux_surface.magnetic_shear_r_minor = Ggeom{ii}.shat;
  out{iN}.flux_surface.b_field_tor_sign = -sb_gkw;
  out{iN}.flux_surface.ip_sign = -sj_gkw;
- out{iN}.flux_surface.pressure_gradient  = -beta_pr_gkw.*Brat.^2./Rrat;
- out{iN}.flux_surface.c  = c;
- out{iN}.flux_surface.s  = s;
- out{iN}.flux_surface.dc_dr_minor  = c_pr;
- out{iN}.flux_surface.ds_dr_minor  = s_pr;
+ out{iN}.flux_surface.pressure_gradient_norm  = -beta_pr_gkw.*Brat.^2./Rrat;
+ out{iN}.flux_surface.shape_coefficients_c  = c;
+ out{iN}.flux_surface.shape_coefficients_s  = s;
+ out{iN}.flux_surface.dc_dr_minor_norm  = c_pr;
+ out{iN}.flux_surface.ds_dr_minor_norm  = s_pr;
 
 
  %%%% Species parameters %%%%
@@ -277,7 +251,7 @@ for iN=1:Nout % loop over output files
  % mD_GKDB = 3.33445e-27; % m_D [kg] in GKDB 
  % [dum,Idum]=min(abs(1-me./[me ref_masses]./G{ii}.SPECIES(Iele).mass));
 
- meOmD_GKDB = 2.7237e-4; % m_e/m_D in GKDB
+ meOmD_GKDB = 2.7237e-4; % m_e/m_D in GKDB % to update with IMAS values
  mrat = meOmD_GKDB./G{ii}.SPECIES(Iele).mass; %mref_GKW/mref_GKDB
  vthrat = sqrt(1./G{ii}.SPECIES(Iele).temp./mrat); % vthref_GKW/vthref_GKDB
  qrat=-1./G{ii}.SPECIES(Iele).z; %qref_GKW/qref_GKDB
@@ -285,29 +259,36 @@ for iN=1:Nout % loop over output files
  nrat=1./G{ii}.SPECIES(Iele).dens;
 
  for jj=1:nsp % loop over species
-   out{iN}.species{jj}.charge = G{ii}.SPECIES(jj).z.*qrat;
-   out{iN}.species{jj}.mass = G{ii}.SPECIES(jj).mass.*mrat;
-   out{iN}.species{jj}.density = G{ii}.SPECIES(jj).dens.*nrat; %correction needed if theta<>0 at s=0 + CF effects (done later in the script)
-   out{iN}.species{jj}.temperature = G{ii}.SPECIES(jj).temp.*Trat;
-   out{iN}.species{jj}.density_log_gradient = G{ii}.SPECIES(jj).rln./Rrat;
-   out{iN}.species{jj}.temperature_log_gradient = G{ii}.SPECIES(jj).rlt./Rrat;
-   out{iN}.species{jj}.toroidal_velocity_gradient = G{ii}.SPECIES(jj).uprim.*sb_gkw.*vthrat./Rrat.^2;
+   out{iN}.species{jj}.charge_norm = G{ii}.SPECIES(jj).z.*qrat;
+   out{iN}.species{jj}.mass_norm = G{ii}.SPECIES(jj).mass.*mrat;
+   out{iN}.species{jj}.density_norm = G{ii}.SPECIES(jj).dens.*nrat; %correction needed if theta<>0 at s=0 + CF effects (done later in the script)
+   out{iN}.species{jj}.temperature_norm = G{ii}.SPECIES(jj).temp.*Trat;
+   out{iN}.species{jj}.density_log_gradient_norm = G{ii}.SPECIES(jj).rln./Rrat;
+   out{iN}.species{jj}.temperature_log_gradient_norm = G{ii}.SPECIES(jj).rlt./Rrat;
+   out{iN}.species{jj}.velocity_toroidal_gradient_norm = G{ii}.SPECIES(jj).uprim.*sb_gkw.*vthrat./Rrat.^2;
  end
 
- out{iN}.species_global.toroidal_velocity = G{ii}.ROTATION.vcor.*sb_gkw.*vthrat./Rrat;
+ out{iN}.species_all.velocity_tor_norm = G{ii}.ROTATION.vcor.*sb_gkw.*vthrat./Rrat;
 
  %%% Type of run %%%
  if strcmp(upper(G{ii}.CONTROL.method),'EXP')
-  out{iN}.code.initial_value_run=1;
+  out{iN}.model.initial_value_run=1;
   nb_eiv=1;
  else
   is_ok(ii)=0;
   ok_msg{ii}='Implicit or eigenvalue runs not handled yet';
   continue
  end
- 
+ if G{ii}.CONTROL.non_linear==0
+  out{iN}.model.non_linear_run=0;
+ else
+  is_ok(ii)=0;
+  ok_msg{ii}='Non linear runs not handled yet';
+  continue
+ end
+
  %%% Modes %%%% 
- out{iN}.wavevectors{jN}.poloidal_turns = G{ii}.GRIDSIZE.nperiod.*2-1;
+ out{iN}.wavevector{jN}.poloidal_turns = G{ii}.GRIDSIZE.nperiod.*2-1;
  rhorat=mrat.*vthrat./qrat./Brat; % rhoref_GKW./rhoref_GKDB
  Imid = find(Ggeom{ii}.s_grid>-0.5 & Ggeom{ii}.s_grid<0.5 & Ggeom{ii}.r.*Rrat>1);
  gxx_th0 = interpos(Ggeom{ii}.z(Imid).*Rrat,Ggeom{ii}.g_eps_eps(Imid),Z0,0.);   % interpolation at Z=Z0 (theta=0)
@@ -317,7 +298,7 @@ for iN=1:Nout % loop over output files
 
  if G{ii}.MODE.kr_type=='kr'|G{ii}.MODE.chin==0
   krrho =  G{ii}.MODE.krrho;
-  out{iN}.wavevectors{jN}.radial_wavevector = krrho.*sqrt(gxx_th0./gxx_s0)./rhorat;
+  out{iN}.wavevector{jN}.radial_component_norm = krrho.*sqrt(gxx_th0./gxx_s0)./rhorat;
  else
   is_ok(ii)=0;
   ok_msg{ii}='Getting krrho with CHIN option not handled yet';
@@ -325,23 +306,23 @@ for iN=1:Nout % loop over output files
  end
 
  kthrho = G{ii}.MODE.kthrho;
- out{iN}.wavevectors{jN}.binormal_wavevector = kthrho.*sqrt(gyy_th0./gyy_s0)./rhorat;
+ out{iN}.wavevector{jN}.binormal_component_norm = kthrho.*sqrt(gyy_th0./gyy_s0)./rhorat;
 
  %%% Collisions %%%
  eV = 1.6022e-19; % elementary charge
  eps0= 8.8541878176e-12; % vacuum permittivity
  if G{ii}.CONTROL.collisions==0
-  out{iN}.species_global.collisionality=0;
-  out{iN}.species_global.collision_enhancement_factor=1;
-  out{iN}.code.collision_ei_only=0;
-  out{iN}.code.collision_pitch_only=0;
-  out{iN}.code.collision_finite_larmor_radius=0;
-  out{iN}.code.collision_momentum_conservation=1;
-  out{iN}.code.collision_energy_conservation=1;
+  out{iN}.model.collisions_pitch_only=0;
+  out{iN}.model.collisions_finite_larmor_radius=0;
+  out{iN}.model.collisions_momentum_conservation=1;
+  out{iN}.model.collisions_energy_conservation=1;
+  out{iN}.collisions.collisionality_norm = zeros(nsp,nsp);
  else
   if G{ii}.COLLISIONS.freq_override==0
-    out{iN}.species_global.collisionality = eV^4./(4*pi*eps0.^2).* G{ii}.COLLISIONS.rref .* ...
+    % out{iN}.species_global.collisionality = eV^4./(4*pi*eps0.^2).* G{ii}.COLLISIONS.rref .* ...
               G{ii}.COLLISIONS.nref.*G{ii}.SPECIES(Iele).dens.*1e19 ./ (1e3.*G{ii}.COLLISIONS.tref.*G{ii}.SPECIES(Iele).temp).^2; 
+    % need to update to use the per species collision output
+      out{iN}.collisions.collisionality_norm = zeros(nsp,nsp);
   else
     is_ok(ii)=0;
     ok_msg{ii}='freq_override option in COLLISIONS not treated yet';
@@ -349,43 +330,43 @@ for iN=1:Nout % loop over output files
   end
 
   if G{ii}.COLLISIONS.zeff>1
+% not used anymore, to remove
     % look for the value applied for Zeff in the out file produced by GKW
     % would be better to have it as proper GKW output..
-    str_to_find = 'Electron/main-ion\ collision\ frequency\ scattering\ scaled\ up\ by\ Zeff='; 
-    flpth_out = gkwpath('out',proj);
-    [dum,dum_str]=unix(['grep ' str_to_find ' ' flpth_out flist{ii}]);
-    dum=regexp(dum_str,['(' str_to_find ')(?<token>.*)'],'names');
-    if isempty(dum)||(str2num(dum.token)<1 | str2num(dum.token)>1e6)
-      is_ok(ii)=0;
-      ok_msg{ii}='Problem when computing the scaling factor for e-i collisions';
-      continue
-    else
-      out{iN}.species_global.collisions_enhancement_factor = str2num(dum.token);     
-    end
-  else
-    out{iN}.species_global.collisions_enhancement_factor = 1;
+%    str_to_find = 'Electron/main-ion\ collision\ frequency\ scattering\ scaled\ up\ by\ Zeff='; 
+%    flpth_out = gkwpath('out',proj);
+%    [dum,dum_str]=unix(['grep ' str_to_find ' ' flpth_out flist{ii}]);
+%    dum=regexp(dum_str,['(' str_to_find ')(?<token>.*)'],'names');
+%    if isempty(dum)||(str2num(dum.token)<1 | str2num(dum.token)>1e6)
+%      is_ok(ii)=0;
+%      ok_msg{ii}='Problem when computing the scaling factor for e-i collisions';
+%      continue
+%    else
+%      out{iN}.species_global.collisions_enhancement_factor = str2num(dum.token);     
+%    end
+%  else
+%    out{iN}.species_global.collisions_enhancement_factor = 1;
   end
 
-  out{iN}.code.collision_ei_only= (G{ii}.COLLISIONS.lorentz==1); % Lorentz also implies pitch angle only
-  out{iN}.code.collision_pitch_only=(G{ii}.COLLISIONS.pitch_angle==1) & (G{ii}.COLLISIONS.en_scatter~=1 & G{ii}.COLLISIONS.friction_coll~=1);
-  out{iN}.code.collision_finite_larmor_radius=0;
-  out{iN}.code.collision_momentum_conservation=(G{ii}.COLLISIONS.mom_conservation==1);
-  out{iN}.code.collision_energy_conservation=(G{ii}.COLLISIONS.ene_conservation==1);
+  out{iN}.model.collisions_pitch_only=(G{ii}.COLLISIONS.pitch_angle==1) & (G{ii}.COLLISIONS.en_scatter~=1 & G{ii}.COLLISIONS.friction_coll~=1);
+  out{iN}.model.collisions_finite_larmor_radius=0;
+  out{iN}.model.collisions_momentum_conservation=(G{ii}.COLLISIONS.mom_conservation==1);
+  out{iN}.model.collisions_energy_conservation=(G{ii}.COLLISIONS.ene_conservation==1);
 
  end
 
  %%% Debye length %%
 
- out{iN}.species_global.debye_length = 0; % not taken into account in GKW
+ out{iN}.species_all.debye_length_reference = 0; % not taken into account in GKW
 
  %%% EM effects %%%
 
- out{iN}.code.include_a_parallel = (G{ii}.CONTROL.nlapar);
- out{iN}.code.include_b_field_parallel = (G{ii}.CONTROL.nlbpar);
+ out{iN}.model.include_a_field_parallel = (G{ii}.CONTROL.nlapar);
+ out{iN}.model.include_b_field_parallel = (G{ii}.CONTROL.nlbpar);
 
  if G{ii}.CONTROL.nlapar==1 | G{ii}.CONTROL.nlbpar==1
    if G{ii}.SPCGENERAL.beta_type=='ref'
-     out{iN}.species_global.beta = G{ii}.SPCGENERAL.beta_ref.*Brat.^2.*G{ii}.SPECIES(Iele).dens.*G{ii}.SPECIES(Iele).temp;   
+     out{iN}.species_all.beta_reference = G{ii}.SPCGENERAL.beta_ref.*Brat.^2.*G{ii}.SPECIES(Iele).dens.*G{ii}.SPECIES(Iele).temp;   
    elseif G{ii}.SPCGENERAL.beta_type=='eq'
      % look for the value applied for beta in the out file produced by GKW
      % would be better to have it as proper GKW output..
@@ -398,7 +379,7 @@ for iN=1:Nout % loop over output files
       ok_msg{ii}='Problem when retrieving beta from the output file';
       continue
      else
-       out{iN}.species_global.beta = str2num(dum(end).token).*Brat.^2.*G{ii}.SPECIES(Iele).dens.*G{ii}.SPECIES(Iele).temp;             
+       out{iN}.species_all.beta_reference = str2num(dum(end).token).*Brat.^2.*G{ii}.SPECIES(Iele).dens.*G{ii}.SPECIES(Iele).temp;             
      end
    else 
       is_ok(ii)=0;
@@ -406,26 +387,27 @@ for iN=1:Nout % loop over output files
       continue
    end
  else
-   out{iN}.species_global.beta = 0;   
+   out{iN}.species_all.beta_reference = 0;   
  end
 
  %%% CF effects %%%
  
  if (G{ii}.ROTATION.cf_trap==1)|(G{ii}.ROTATION.cf_drift==1)
   if ((G{ii}.ROTATION.cf_trap+G{ii}.ROTATION.cf_drift+G{ii}.ROTATION.cf_upphi+G{ii}.ROTATION.cf_upsrc)==4)
-    out{iN}.code.include_centrifugal_effects = 1;
+    out{iN}.model.include_centrifugal_effects = 1;
     flpth_cfdens=gkwpath('cfdens',proj);
     cfdens=load([flpth_cfdens flist{ii}]);
     Imid = find(Ggeom{ii}.s_grid>-0.5 & Ggeom{ii}.s_grid<0.5 & Ggeom{ii}.r.*Rrat>1);    
     nefac_th0=interpos(Ggeom{ii}.z(Imid).*Rrat,cfdens(Imid,Iele+1+nsp),Z0,0.); 
-    out{iN}.species_global.collisionality = out{iN}.species_global.collisionality.*nefac_th0;
+%    out{iN}.species_all.collisionality = out{iN}.species_global.collisionality.*nefac_th0;
+% check whether the collisionality array needs to be scaled
     nrat = nrat.*nefac_th0; 
    disp('Warning: to check, should likely be nrat/nefac_th0')
     for jj=1:nsp % loop over species
       nsfac_th0 = interpos(Ggeom{ii}.z(Imid).*Rrat,cfdens(Imid,jj+1+nsp),Z0,0.);   % interpolation at Z=Z0 (theta=0)
-      out{iN}.species{jj}.density = out{iN}.species{jj}.density.*nsfac_th0./nefac_th0; %correction needed if theta<>0 at s=0 + CF effects
+      out{iN}.species{jj}.density_norm = out{iN}.species{jj}.density.*nsfac_th0./nefac_th0; %correction needed if theta<>0 at s=0 + CF effects
       rlns_th0 = interpos(Ggeom{ii}.z(Imid).*Rrat,cfdens(Imid,jj+1),Z0,0.);
-      out{iN}.species{jj}.density_log_gradient = rlns_th0./Rrat;
+      out{iN}.species{jj}.density_log_gradient_norm = rlns_th0./Rrat;
     end
   else
     is_ok(ii)=0;
@@ -433,7 +415,7 @@ for iN=1:Nout % loop over output files
     continue
   end
  else
-  out{iN}.code.include_centrifugal_effects = 0;  
+  out{iN}.model.include_centrifugal_effects = 0;  
  end 
 
 
@@ -442,18 +424,27 @@ for iN=1:Nout % loop over output files
  for kk=1:nb_eiv   % for initial value runs, nb_eiv=1
 
  %%% growth rate and mode frequency %%%
- out{iN}.wavevectors{jN}.eigenvalues{kk}.growth_rate = gamma(ii).*vthrat./Rrat; 
- out{iN}.wavevectors{jN}.eigenvalues{kk}.frequency = sj_gkw.*freq(ii).*vthrat./Rrat;
+ out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_norm = gamma(ii).*vthrat./Rrat; 
+ out{iN}.wavevector{jN}.eigenmode{kk}.frequency_norm = sj_gkw.*freq(ii).*vthrat./Rrat;
  
  dum=load([gkwpath('time',proj) flist{ii}]);
  t=dum(:,1);
  g=dum(:,2);
- Delta_t=3./gamma(ii);
+ Delta_t=3./(0.01+abs(gamma(ii)));
  I=iround(t,t(end)-Delta_t);
- out{iN}.wavevectors{jN}.eigenvalues{kk}.growth_rate_tolerance=sqrt(trapz(t(I:end),(g(I:end)-gamma(ii)).^2)./Delta_t)./gamma(ii);
- if out{iN}.wavevectors{jN}.eigenvalues{kk}.growth_rate_tolerance==0
-  out{iN}.wavevectors{jN}.eigenvalues{kk}.growth_rate_tolerance=1e-6;
+ out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance=sqrt(trapz(t(I:end),(g(I:end)-gamma(ii)).^2)./Delta_t)./abs(gamma(ii));
+% out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance=sqrt(trapz(t(I:end),(g(I:end)-gamma(ii)).^2)./Delta_t);
+% out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance=sqrt(trapz(t(I:end),(exp(g(I:end).*t(I:end))-exp(gamma(ii).*t(I:end))).^2)./Delta_t)./exp(gamma(ii).*t(end));
+disp('warning, need to solve the growth rate tolerance issue')
+ if out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance==0
+  out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance=1e-6;
  end
+% if out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance>0.
+%  is_ok(ii)=0;
+%    ok_msg{ii}=['Growth rate tolerance too large (>10%): ' num2str(out{iN}.wavevector{jN}.eigenmode{kk}.growth_rate_tolerance)];
+%    continue
+% end
+ 
  %%% eigenfunctions %%%
  n_turn = 2*G{ii}.GRIDSIZE.nperiod-1;
  ns_per_turn = G{ii}.GRIDSIZE.n_s_grid ./ n_turn;
@@ -476,7 +467,7 @@ for iN=1:Nout % loop over output files
  test_bpar= ~G{ii}.CONTROL.nlbpar | isfield(G{ii}.DIAGNOSTIC,'kykxs_bpar')&&G{ii}.DIAGNOSTIC.kykxs_bpar==1;
  fields_prefix={'phi_','apar_','bpar_'};
  fields_normfac=[rhorat.*Trat./(Rrat.*qrat) rhorat.^2.*Brat./Rrat rhorat.*Brat./Rrat];
- if  test_phi & test_apar & test_bpar % use kykxs diagnostics
+ if test_phi & test_apar & test_bpar % use kykxs diagnostics
    flpth_fields=gkwpath('kykxs_fields',proj);
    gkw_fields_names={'Phi','Apa','Bpa'};
    for ff=1:length(fields_prefix) 
@@ -487,11 +478,11 @@ for iN=1:Nout % loop over output files
      if ~isempty(fl_num) 
        fid=fopen([flpth_fields flist{ii} '/' fl_num{end}{1} '_real']);
        frewind(fid);
-       dum_re=fread(fid,'double');
+       dum_re=fread(fid,Inf,'double',0,endianness); % Turing is big-endian, others little-endian
        fclose(fid);
        fid=fopen([flpth_fields flist{ii} '/' fl_num{end}{1} '_imag']);
        frewind(fid);
-       dum_im=fread(fid,'double');
+       dum_im=fread(fid,Inf,'double',0,endianness);
        fclose(fid);
        eval([fields_prefix{ff} 'gkw=dum_re+i.*dum_im;']);
        eval([fields_prefix{ff} 'gkdb=(dum_re(Ith)+i.*dum_im(Ith)).*fields_normfac(' num2str(ff) ');']);
@@ -526,12 +517,11 @@ for iN=1:Nout % loop over output files
      bpar_gkdb=bpar_gkdb.*rotate;
    end
  end
-keyboard
+
  amp_gkw = sqrt(trapz(Ggeom{ii}.s_grid,abs(phi_gkw).^2+abs(apar_gkw).^2+abs(bpar_gkw).^2));% ./(Ggeom{ii}.s_grid(end)-Ggeom{ii}.s_grid(1)));
 
- ds=Ggeom{ii}.s_grid(2)-Ggeom{ii}.s_grid(1));
-
- amp_gkw = sqrt(sum(abs(phi_gkw).^2+abs(apar_gkw).^2+abs(bpar_gkw).^2).*ds) %-> this is equal to nperiod
+ ds=Ggeom{ii}.s_grid(2)-Ggeom{ii}.s_grid(1);
+ amp_gkw = sqrt(sum(abs(phi_gkw).^2+abs(apar_gkw).^2+abs(bpar_gkw).^2).*ds); %-> this is equal to nperiod
 
 
  amp_gkdb = sqrt(trapz(th_final,abs(phi_gkdb).^2+abs(apar_gkdb).^2+abs(bpar_gkdb).^2))./(2*pi);
@@ -554,18 +544,20 @@ keyboard
  apar_gkdb=apar_gkdb./rotate_new;
  bpar_gkdb=bpar_gkdb./rotate_new;
 
- out{iN}.wavevectors{jN}.eigenvalues{kk}.eigenvector.poloidal_angle = th_final;
- out{iN}.wavevectors{jN}.eigenvalues{kk}.eigenvector.r_phi_potential_perturbed = real(phi_gkdb);
- out{iN}.wavevectors{jN}.eigenvalues{kk}.eigenvector.i_phi_potential_perturbed = imag(phi_gkdb);
- out{iN}.wavevectors{jN}.eigenvalues{kk}.eigenvector.r_a_parallel_perturbed = real(apar_gkdb);
- out{iN}.wavevectors{jN}.eigenvalues{kk}.eigenvector.i_a_parallel_perturbed = imag(apar_gkdb);
- out{iN}.wavevectors{jN}.eigenvalues{kk}.eigenvector.r_b_field_parallel_perturbed = real(bpar_gkdb);
- out{iN}.wavevectors{jN}.eigenvalues{kk}.eigenvector.i_b_field_parallel_perturbed = imag(bpar_gkdb);
+ out{iN}.wavevector{jN}.eigenmode{kk}.poloidal_angle_grid = th_final;
+ out{iN}.wavevector{jN}.eigenmode{kk}.phi_potential_perturbed_norm_real = real(phi_gkdb);
+ out{iN}.wavevector{jN}.eigenmode{kk}.phi_potential_perturbed_norm_imaginary = imag(phi_gkdb);
+ out{iN}.wavevector{jN}.eigenmode{kk}.a_field_parallel_perturbed_norm_real = real(apar_gkdb);
+ out{iN}.wavevector{jN}.eigenmode{kk}.a_field_parallel_perturbed_norm_imaginary = imag(apar_gkdb);
+ out{iN}.wavevector{jN}.eigenmode{kk}.b_field_parallel_perturbed_norm_real = real(bpar_gkdb);
+ out{iN}.wavevector{jN}.eigenmode{kk}.b_field_parallel_perturbed_norm_imaginary = imag(bpar_gkdb);
 
 
  %%% moments %%%
- flpth_moments={gkwpath('kykxs_moments',proj),gkwpath('kykxs_j0_moments',proj)};
- gkw_moments_names={'dens','vpar','Tpar','Tperp','dens_ga','vpar_ga','Tpar_ga','Tperp_ga'};
+ %flpth_moments={gkwpath('kykxs_moments',proj),gkwpath('kykxs_j0_moments',proj)}; % to restore if moments are kept
+ flpth_moments={gkwpath('kykxs_j0_moments',proj)};
+ gkw_moments_names={'dens_ga','vpar_ga','Tpar_ga','Tperp_ga'};
+ gkdb_moments_names={'density_gyroaveraged','velocity_parallel_gyroaveraged','temperature_perpendicular_gyroaveraged','temperature_parallel_gyroaveraged'};
  for jj=1:nsp
   if jj<10
    str=['0' num2str(jj)];
@@ -581,14 +573,20 @@ keyboard
    if ~isempty(fl_num) 
     fid=fopen([flpth_moments{1+floor((mm-1)/4)} flist{ii} '/' fl_num{end}{1} '_real']);
     frewind(fid);
-    dum_re=fread(fid,'double');
+    dum_re=fread(fid,Inf,'double',0,endianness);
     fclose(fid);
     fid=fopen([flpth_moments{1+floor((mm-1)/4)} flist{ii} '/' fl_num{end}{1} '_imag']);
     frewind(fid);
-    dum_im=fread(fid,'double');
+    dum_im=fread(fid,Inf,'double',0,endianness);
     fclose(fid);
-    out{iN}.moments_rotating.(['r_' gkdb_moments_names{mm}])(:,jj,jN,kk) = dum_re.*moments_normfac(mm);
-    out{iN}.moments_rotating.(['i_' gkdb_moments_names{mm}])(:,jj,jN,kk) = dum_im.*moments_normfac(mm);
+    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame{jj}.([gkdb_moments_names{mm} '_real']) = dum_re.*moments_normfac(mm);
+    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame{jj}.([gkdb_moments_names{mm} '_imaginary']) = dum_im.*moments_normfac(mm);
+   else 
+    %out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame = [];
+    %out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame = [];
+    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame{jj}.([gkdb_moments_names{mm} '_real']) = NaN;
+    out{iN}.wavevector{jN}.eigenmode{kk}.moments_norm_rotating_frame{jj}.([gkdb_moments_names{mm} '_imaginary']) = NaN;
+
    end
   end
  end 
@@ -602,59 +600,44 @@ keyboard
  for jj=1:nsp % loop over species
 
    pflux_norm_sp = G{ii}.SPECIES(jj).dens;
-   vflux_norm_sp = G{ii}.SPECIES(jj).dens.*sqrt(out{iN}.species{jj}.mass.*out{iN}.species{jj}.temperature);
-   eflux_norm_sp = G{ii}.SPECIES(jj).dens.*out{iN}.species{jj}.temperature;
-
+   vflux_norm_sp = G{ii}.SPECIES(jj).dens.*sqrt(out{iN}.species{jj}.mass_norm.*out{iN}.species{jj}.temperature_norm);
+   eflux_norm_sp = G{ii}.SPECIES(jj).dens.*out{iN}.species{jj}.temperature_norm;
+ 
    dims_fl = size(pflux.es); 
    dum=reshape(pflux.es,[],dims_fl(end));
-   out{iN}.particle_fluxes.phi_potential(jj,jN,kk) = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.particle_flux_phi_potential = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
    dum=reshape(pflux.em,[],dims_fl(end));
-   out{iN}.particle_fluxes.a_parallel(jj,jN,kk) = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.particle_flux_a_field_parallel = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
    dum=reshape(pflux.bpar,[],dims_fl(end));
-   out{iN}.particle_fluxes.b_field_parallel(jj,jN,kk) = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.particle_flux_b_field_parallel = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
 
    dims_fl = size(vflux.eslab); 
    dum=reshape(vflux.eslab,[],dims_fl(end));
-   out{iN}.momentum_fluxes_lab.phi_potential(jj,jN,kk) = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_flux_phi_potential = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
    dum=reshape(vflux.emlab,[],dims_fl(end));
-   out{iN}.momentum_fluxes_lab.a_parallel(jj,jN,kk) = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_flux_a_field_parallel = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
    dum=reshape(vflux.bparlab,[],dims_fl(end));
-   out{iN}.momentum_fluxes_lab.b_field_parallel(jj,jN,kk) = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
-
-   dims_fl = size(vflux.es); 
-   dum=reshape(vflux.es,[],dims_fl(end));
-   out{iN}.momentum_fluxes_rotating.phi_potential(jj,jN,kk) = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
-   dum=reshape(vflux.em,[],dims_fl(end));
-   out{iN}.momentum_fluxes_rotating.a_parallel(jj,jN,kk) = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
-   dum=reshape(vflux.bpar,[],dims_fl(end));
-   out{iN}.momentum_fluxes_rotating.b_field_parallel(jj,jN,kk) = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_flux_b_field_parallel = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
 
    dims_fl = size(eflux.eslab); 
    dum=reshape(eflux.eslab,[],dims_fl(end));
-   out{iN}.heat_fluxes_lab.phi_potential(jj,jN,kk) = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.energy_flux_phi_potential = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
    dum=reshape(eflux.emlab,[],dims_fl(end));
-   out{iN}.heat_fluxes_lab.a_parallel(jj,jN,kk) = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.energy_flux_a_field_parallel = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
    dum=reshape(eflux.bparlab,[],dims_fl(end));
-   out{iN}.heat_fluxes_lab.b_field_parallel(jj,jN,kk) = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
-
-   dims_fl = size(eflux.es); 
-   dum=reshape(eflux.es,[],dims_fl(end));
-   out{iN}.heat_fluxes_rotating.phi_potential(jj,jN,kk) = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
-   dum=reshape(eflux.em,[],dims_fl(end));
-   out{iN}.heat_fluxes_rotating.a_parallel(jj,jN,kk) = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
-   dum=reshape(eflux.bpar,[],dims_fl(end));
-   out{iN}.heat_fluxes_rotating.b_field_parallel(jj,jN,kk) = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.energy_flux_b_field_parallel = dum(ii,jj).*eflux_norm_base.*eflux_norm_sp;
 
   end
  end
- 
 
+ % empty for linear runs 
+ out{iN}.total_fluxes_norm=[];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Meta-data
 
  
- out{iN}.point.creator='Camenen';
- out{iN}.point.comment=['scan=' flnm ', proj=' proj '\n' comments];
+ out{iN}.ids_properties.provider='Camenen';
+ out{iN}.ids_properties.comment=['scan=' flnm ', proj=' proj '\n' comments];
 
  out{iN}.code.name='GKW';
  
@@ -705,48 +688,25 @@ for iN=1:Nout % loop over output files
  if isempty(Iwok)
    out{iN}=[];
  else
-   out{iN}.particle_fluxes.phi_potential=out{iN}.particle_fluxes.phi_potential(:,Iwok,:);
-   out{iN}.particle_fluxes.a_parallel=out{iN}.particle_fluxes.a_parallel(:,Iwok,:);
-   out{iN}.particle_fluxes.b_field_parallel=out{iN}.particle_fluxes.b_field_parallel(:,Iwok,:);
-
-   out{iN}.momentum_fluxes_lab.phi_potential=out{iN}.momentum_fluxes_lab.phi_potential(:,Iwok,:);
-   out{iN}.momentum_fluxes_lab.a_parallel=out{iN}.momentum_fluxes_lab.a_parallel(:,Iwok,:);
-   out{iN}.momentum_fluxes_lab.b_field_parallel=out{iN}.momentum_fluxes_lab.b_field_parallel(:,Iwok,:);
-
-   out{iN}.momentum_fluxes_rotating.phi_potential=out{iN}.momentum_fluxes_rotating.phi_potential(:,Iwok,:);
-   out{iN}.momentum_fluxes_rotating.a_parallel=out{iN}.momentum_fluxes_rotating.a_parallel(:,Iwok,:);
-   out{iN}.momentum_fluxes_rotating.b_field_parallel=out{iN}.momentum_fluxes_rotating.b_field_parallel(:,Iwok,:);
-
-   out{iN}.heat_fluxes_lab.phi_potential=out{iN}.heat_fluxes_lab.phi_potential(:,Iwok,:);
-   out{iN}.heat_fluxes_lab.a_parallel=out{iN}.heat_fluxes_lab.a_parallel(:,Iwok,:);
-   out{iN}.heat_fluxes_lab.b_field_parallel=out{iN}.heat_fluxes_lab.b_field_parallel(:,Iwok,:);
-
-   out{iN}.heat_fluxes_rotating.phi_potential=out{iN}.heat_fluxes_rotating.phi_potential(:,Iwok,:);
-   out{iN}.heat_fluxes_rotating.a_parallel=out{iN}.heat_fluxes_rotating.a_parallel(:,Iwok,:);
-   out{iN}.heat_fluxes_rotating.b_field_parallel=out{iN}.heat_fluxes_rotating.b_field_parallel(:,Iwok,:);
-
-   for mm=1:length(gkdb_moments_names) 
-    out{iN}.moments_rotating.(['r_' gkdb_moments_names{mm}]) = out{iN}.moments_rotating.(['r_' gkdb_moments_names{mm}])(:,:,Iwok,:);
-    out{iN}.moments_rotating.(['i_' gkdb_moments_names{mm}]) = out{iN}.moments_rotating.(['i_' gkdb_moments_names{mm}])(:,:,Iwok,:);
-   end
-
-   dum={out{iN}.wavevectors{Iwok}};
-   out{iN}=rmfield(out{iN},'wavevectors');
-   out{iN}.wavevectors=dum;
+   dum={out{iN}.wavevector{Iwok}};
+   out{iN}=rmfield(out{iN},'wavevector');
+   out{iN}.wavevector=dum;
  end
 end
 
 % order fields
-top_fields_order={'point','code','flux_surface','species','species_global','wavevectors','particle_fluxes','momentum_fluxes_lab','momentum_fluxes_rotating','heat_fluxes_lab','heat_fluxes_rotating','moments_rotating'};
+top_fields_order={'ids_properties','code','model','flux_surface','species','species_all','collisions','wavevector','total_fluxes_norm'};
 for iN=1:Nout % loop over output files
   if ~isempty(out{iN})
     out{iN}=orderfields(out{iN},top_fields_order);
   end
 end
 
+
 %%%%%%%%%%%%%%%%%%
 % write JSON files
 %%%%%%%%%%%%%%%%%%
+
 for iN=1:Nout % loop over output files
  if is_ok_out(iN)
 %  savejson('',out{iN},[flpth_json flnm '_' num2str(iN) '.json']);
