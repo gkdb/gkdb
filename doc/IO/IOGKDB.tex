@@ -37,9 +37,9 @@
 
 \chapter{Preamble}
 
-This document summarises the names, conventions and normalisations adopted for the inputs and outputs of the linear gyrokinetic database (GKDB) storing results from $\delta$f, flux-tube gyrokinetic simulations.\\ 
+The gyrokinetic database (GKDB) stores results from linear and non-linear $\delta$f, flux-tube gyrokinetic simulations. The present document summarises the names, conventions and normalisations adopted for the inputs and outputs of the  GKDB.\\ 
 The normalised inputs and outputs are independent of $\rho_*$ consistently with the local approximation and a spectral representation is assumed in the perpendicular plane (i.e. homogeneous turbulence).\\
-S.I. units are used everywhere with the exception of temperatures given in eV. This means that $kT$ is noted $T$ as is customary in plasma physics (and possibly confusing).
+S.I. units are used everywhere with the exception of temperatures given in eV. This means that $kT$ is noted $T$ as is customary in plasma physics.
 
 \chapter{Database structure}
 \resizebox{\textwidth}{!}{%
@@ -49,9 +49,9 @@ S.I. units are used everywhere with the exception of temperatures given in eV. T
 \hline
 \multicolumn{2}{|c|}{\textbf{ids\_properties}} \\
 \hline
-provider &  text \\
+\hyperref[sec:codespecfic]{provider} &  text \\
 creation\_date & timestamp  \\
-comment & text   \\   
+\hyperref[sec:comments]{comment} & text   \\   
 \hline
 \end{tabularx}\\
 };
@@ -70,8 +70,8 @@ tag\_id &  integer \\
 \hline
 \multicolumn{2}{|c|}{\textbf{tag}} \\
 \hline
-name & text \\
-comment &  text \\
+\hyperref[sec:tags]{name} & text \\
+\hyperref[sec:tags]{comment} &  text \\
 \hline
 \end{tabularx}\\
 };
@@ -81,9 +81,9 @@ comment &  text \\
 \multicolumn{2}{|c|}{\textbf{code}} \\
 \hline
 ids\_properties\_id & integer \\
-name &  text  \\
-version\_date & text  \\
-parameters & jsonb  \\   
+\hyperref[sec:codespecfic]{name} &  text  \\
+\hyperref[sec:codespecfic]{version} & text  \\
+\hyperref[sec:codespecfic]{parameters} & jsonb  \\   
 \hline
 \end{tabularx}\\
 };
@@ -93,9 +93,9 @@ parameters & jsonb  \\
 \multicolumn{2}{|c|}{\textbf{model}} \\
 \hline
 ids\_properties\_id & integer \\
-\hyperref[sec:rotswitches]{initial\_value\_run} &  boolean  \\
-non\_linear\_run &  boolean  \\
-time\_interval\_norm & array $2\times 1$ \\
+\hyperref[sec:runtype]{initial\_value\_run} (1 if NL)&  boolean  \\
+\hyperref[sec:runtype]{non\_linear\_run} &  boolean  \\
+\hyperref[sec:runtype]{time\_interval\_norm} (NL) & array $2\times 1$ \\
 \hyperref[em:switches]{include\_a\_field\_parallel} &  boolean  \\
 \hyperref[em:switches]{include\_b\_field\_parallel} &  boolean  \\
 \hyperref[sec:rotswitches]{include\_centrifugal\_effects} &  boolean  \\
@@ -129,7 +129,7 @@ ids\_properties\_id & integer \\
 \end{tabularx}\\
 };
 \node[draw,anchor=north west] (species_all) at (1,4.5) {
-\begin{tabularx}{0.35\textwidth}{|X|M{1.2cm}|}
+\begin{tabularx}{0.37\textwidth}{|X|M{1.2cm}|}
 \hline
 \multicolumn{2}{|c|}{\textbf{species\_all}} \\
 \hline
@@ -137,7 +137,7 @@ ids\_properties\_id & integer \\
 \hyperref[em:beta]{beta\_reference} & real \\
 \hyperref[sec:debye]{debye\_length\_reference} & real \\
 \hyperref[sec:torrot]{velocity\_tor\_norm} & real \\
-\hyperref[]{shearing\_rate\_norm} & real \\
+\hyperref[sec:exb]{shearing\_rate\_norm} (NL) & real \\
 \hyperref[sec:zeff]{zeff} & real \\     
 \hline
 \end{tabularx}\\
@@ -150,7 +150,7 @@ ids\_properties\_id & integer \\
 ids\_properties\_id & integer \\
 \hyperref[sec:kx]{radial\_component\_norm} & real \\
 \hyperref[sec:ky]{binormal\_component\_norm} & real \\
-\hyperref[sec:polturns]{poloidal\_turns} & real \\
+\hyperref[sec:polturns]{poloidal\_turns}  (1 if NL) & integer \\
 \hline
 \end{tabularx}\\
 };
@@ -160,9 +160,9 @@ ids\_properties\_id & integer \\
 \multicolumn{2}{|c|}{\textbf{eigenmode}} \\
 \hline
 wavevector\_id & integer \\
-\hyperref[sec:eigenvalues]{growth\_rate\_norm} & real \\
-\hyperref[sec:eigenvalues]{frequency\_norm} & real \\
-\hyperref[sec:eigenvalues]{growth\_rate\_tolerance} & real \\
+\hyperref[sec:eigenvalues]{growth\_rate\_norm} (L) & real \\
+\hyperref[sec:eigenvalues]{frequency\_norm} (L) & real \\
+\hyperref[sec:eigenvalues]{growth\_rate\_tolerance} (L) & real \\
 \hyperref[sec:eigenmode:phi]{phi\_potential\_perturbed\_norm\_real} & array $N_{\theta}\times 1$ \\
 \hyperref[sec:eigenmode:phi]{phi\_potential\_perturbed\_norm\_imaginary} & array $N_{\theta}\times 1$ \\
 \hyperref[sec:eigenmode:apar]{a\_field\_parallel\_perturbed\_norm\_real} & array $N_{\theta}\times 1$ \\
@@ -209,7 +209,7 @@ species2\_id & integer \\
 \node[draw,anchor=north west] (total_fluxes_norm) at (1,-13) {
 \begin{tabularx}{0.45\textwidth}{|X|M{1.2cm}|}
 \hline
-\multicolumn{2}{|c|}{\textbf{total\_fluxes\_norm}} \\
+\multicolumn{2}{|c|}{\textbf{total\_fluxes\_norm (NL)}} \\
 \hline
 species\_id & integer \\
 ids\_properties\_id & integer \\
@@ -296,7 +296,7 @@ The ITER coordinate convention is adopted for the GKDB. The corresponding index 
 \subsection{Cylindrical coordinate system $(R,\varphi,Z)$}
 A right-handed cylindrical coordinate system $(R,\varphi,Z)$, with $R$ the major radius, $Z$ the elevation and $\varphi$ the toroidal angle (increasing when anticlockwise from above) is used to describe the flux surfaces, see Fig.~\ref{fig:coord1}. \\
 The magnetic equilibrium is assumed to be axisymmetric and the poloidal contours of the flux surface $\Psi(R,Z)=\Psi_0$, with $\Psi$ the poloidal magnetic flux, are noted $\{R_{\Psi_0},Z_{\Psi_0}\}$.
-
+For COCOS=$11$, $\Psi$ is minimum at the magnetic axis for a plasma current flowing in the direction of $\nabla \varphi$ and maximum at the magnetic axis for a plasma current flowing in the direction opposite to $\nabla \varphi$.
 \begin{figure}[h]
 \begin{center}
   \includegraphics[width=9cm]{COCOS.pdf}\\
@@ -349,7 +349,7 @@ with $r$ an arbitrary flux surface label (taken here to be the radial coordinate
 with $V'= \frac{\partial V}{\partial r}$ and $V$ being the volume enclosed by the flux surface labelled by $r$. 
 
 \section{Normalisations}
-All quantities in the database (inputs and outputs) are normalised using six reference quantities. These reference quantities are listed (fundamental reference quantities) and then used to built other convenient normalising factors (derived reference quantities).\\
+All quantities in the database (inputs and outputs) are normalised using six reference quantities. These reference quantities (fundamental reference quantities) are listed below and then used to built other convenient normalising factors (derived reference quantities).\\
 In principle, reference quantities do not need to be specified, as the purpose of the database is to relate normalised inputs to normalised outputs. 
 However, if the choice of reference quantities is left arbitrary, the same physical inputs could lead to different normalised inputs in the database depending on the normalisation choice. This is not desirable and the reference quantities are therefore imposed. 
 
@@ -375,62 +375,80 @@ For convenience, the following reference quantities are defined:
 \chapter{Inputs}
 \section{Species}
 For each species $s$, the background distribution function is supposed to be a local Maxwellian. Poloidal asymmetry in the background induced by centrifugal effects is allowed. Poloidally asymmetric quantities are given in input at $\theta=0$. Poloidal asymmetry induced by anisotropic temperatures is not included yet, but could be introduced if need be.\\ 
-At this stage, the database only stores runs with kinetic electron species (adiabatic electrons not allowed). An arbitrary number of kinetic species is allowed, but quasineutrality has to be ensured.
+At this stage, the database only stores runs with kinetic electron species (adiabatic electrons not allowed). An arbitrary number of kinetic species is allowed, including several instance of the same species, but quasineutrality has to be ensured.
 
 \subsection{Charge} \label{sec:charge}
-$$Z_{sN}=\frac{q_s}{q_\tref}$$
+$$\texttt{charge\_norm}=Z_{sN}=\frac{q_s}{q_\tref}$$
 \subsection{Mass} \label{sec:mass}
-$$m_{sN}=\frac{m_s}{m_\tref}$$
+$$\texttt{mass\_norm}=m_{sN}=\frac{m_s}{m_\tref}$$
 \subsection{Density} \label{sec:density}
-$$n_{sN}=\frac{n_s}{n_\tref}$$
+$$\texttt{density\_norm}=n_{sN}=\frac{n_s}{n_\tref}$$
 \subsection{Logarithmic density gradient} \label{sec:dndr}
-$$L_\tref/L_{n_s}=-L_\tref \frac{1}{n_s}\frac{\partial n_s}{\partial r}$$
+$$\texttt{density\_log\_gradient\_norm}=L_\tref/L_{n_s}=-L_\tref \frac{1}{n_s}\frac{\partial n_s}{\partial r}$$
 Positive for peaked profiles. 
 \subsection{Temperature} \label{sec:temperature}
-$$T_{sN}=\frac{T_s}{T_\tref}$$
+$$\texttt{temperature\_norm}=T_{sN}=\frac{T_s}{T_\tref}$$
 \subsection{Logarithmic temperature gradient} \label{sec:dTdr}
-$$L_\tref/L_{T_s}=-L_\tref \frac{1}{T_s}\frac{\partial T_s}{\partial r}$$
+$$\texttt{temperature\_log\_gradient\_norm}=L_\tref/L_{T_s}=-L_\tref \frac{1}{T_s}\frac{\partial T_s}{\partial r}$$
 Positive for peaked profiles.
 \subsection{Toroidal velocity} \label{sec:torrot}
-$$u_{N}=\frac{L_\tref}{\vthref}\omega_{\Phi}$$
+$$\texttt{velocity\_tor\_norm}=u_{N}=\frac{L_\tref}{\vthref}\omega_{\Phi}$$
 Positive for a flow in the direction of $\nabla \varphi$.\\
 All species are assumed to have a purely toroidal flow $\mathbf{v}_s=R^2\omega_\Phi\nabla \varphi$ with a common toroidal angular frequency proportional to the background electric field:
-$$\omega_{\Phi}=-s_j\frac{1}{|\nabla \Psi|}\frac{\partial \Phi}{\partial r},$$
-with $\Phi$ the background electrostatic potential. This assumption is consistent with the ordering used in local gyrokinetic codes, as $\omega_\Phi$ is the lowest order flow in a $\rho_*$ expansion according to neoclassical theory \cite{Hirshman:NF1981}.
-
-\subsection{Toroidal velocity gradient} \label{sec:dvdr}
-$$u'_{sN}=-\frac{L_\tref^2}{\vthref}\frac{\partial \omega_{\varphi,s}}{\partial r}$$
-Positive for peaked profiles of a flow in the direction of $\nabla \varphi$.\\
-Note that the possibility to have a species dependent toroidal velocity gradient with $\omega_{\varphi,s}\neq \omega_\Phi$ is retained. Strictly speaking, this is inconsistent with the local limit assumption $\rho_*\rightarrow 0$ but can be interesting for the interpretation of the experiments (see the discussion in section II of \cite{Camenen:PoP2016} for more details).
+$$\omega_{\Phi}=-2\pi\frac{\partial \Phi}{\partial \Psi},$$
+with $\Phi$ the background electrostatic potential. This assumption is consistent with the ordering used in local gyrokinetic codes, as $\omega_\Phi$ is the lowest order flow in a $\rho_*$ expansion according to neoclassical theory~\cite{Hirshman:NF1981}.
+\subsection{Perpendicular flow shear} \label{sec:exb}
+The $E\times B$ shearing rate is given by:
+$$\texttt{shearing\_rate\_norm}=\gamma_{E_N}=-\frac{L_\tref}{\vthref}\frac{1}{B_\tref}\left(\frac{\partial \Psi}{\partial r}\right)^2\frac{\partial^2 \Phi}{\partial \Psi^2}$$
+This input is only used in the database for non-linear runs (for linear runs, only $\gamma_{E_N}=0$ is allowed).
+\subsection{Parallel flow shear} \label{sec:dvdr}
+The parallel flow shear is assumed to arise entirely from the shear in a toroidal flow of constant angular frequency on a flux surface. The possibility to have a species dependent toroidal velocity gradient with $\omega_{\varphi,s}\neq \omega_\Phi$ is retained. Strictly speaking, this is inconsistent with the local limit assumption $\rho_*\rightarrow 0$ but can be interesting for the interpretation of tokamak experiments (see for instance the discussion in section II of \cite{Camenen:PoP2016}). The species dependent toroidal velocity gradient is then specified by: 
+$$\texttt{velocity\_toroidal\_gradient\_norm}=u'_{sN}=-\frac{L_\tref^2}{\vthref}\frac{\partial \omega_{\varphi,s}}{\partial r},$$
+that is positive for peaked profiles of a flow in the direction of $\nabla \varphi$.\\
+Note that in the strict application of the local limit, i.e. for $\omega_{\varphi,s}=\omega_\Phi$, one has:
+$$\gamma_{E_N}= - \frac{1}{2\pi L_\tref B_\tref}\frac{\partial \Psi}{\partial r} u'_{sN} = - \frac{RB_p}{L_\tref B_\tref} u'_{sN}$$
+\subsection{Plasma beta} \label{em:beta}
+The strength of the electromagnetic effects depends on the ratio of the plasma pressure to the magnetic energy and is specified by the dimensionless ratio:
+\begin{equation}
+\texttt{beta\_reference}=\beta_{eN} = 2\mu_0 \frac{n_\tref T_\tref}{B_\tref^2}
+\end{equation}
+The plasma beta entering the Amp\`ere's law is obtained from the reference value above combined with the species parameters (normalised density and temperature).
+When $\beta_{eN}=0$, the run is electrostatic. 
+\subsection{Debye length} \label{sec:debye}
+The Debye length
+\begin{equation}
+\texttt{debye\_length\_reference}=\lambda_{D}= \sqrt{\frac{\epsilon_0 T_\tref}{n_\tref q_\tref^2}}
+\end{equation}
+enters the linearized quasi-neutrality equation. When neglected, this term is set to zero. In practice, it starts to matter for small scale ETG modes. 
 
 
 \section{Magnetic equilibrium}
 The magnetic equilibrium in the vicinity of the flux surface of interest is specified by the parameters described in this section, given at $r=r_0$.
 
 \subsection{Radial position} \label{sec:rminor}
-$$r_N=\frac{r_0}{L_\tref}$$
+$$\texttt{r\_minor\_norm}=r_N=\frac{r_0}{L_\tref}$$
 
 %\subsection{Reference point}
 %$$R_{0N} = \frac{R_0}{L_\tref} \qquad \textrm{and} \qquad Z_{0N}=\frac{Z_0}{L_\tref}$$
 
 \subsection{Toroidal field direction} \label{sec:btsign}
-$$s_b = \textrm{sign}[\mathbf{B}\cdot\nabla\varphi]$$
+$$\texttt{b\_field\_tor\_sign}=s_b = \textrm{sign}[\mathbf{B}\cdot\nabla\varphi]$$
 
 \subsection{Toroidal current direction} \label{sec:ipsign}
-$$s_j = \textrm{sign}[\mathbf{j}\cdot\nabla\varphi]$$
+$$\texttt{ip\_sign}=s_j = \textrm{sign}[\mathbf{j}\cdot\nabla\varphi]$$
 with $j$ the plasma current density. For the conventions adopted in this document, positive plasma current implies positive poloidal magnetic field.
 
 \subsection{Safety factor} \label{sec:q}
-$$q=\frac{1}{2\pi}\int_0^{2\pi} \frac{\mathbf{B}\cdot\nabla \varphi}{\mathbf{B}\cdot\nabla \theta}\,\textrm{d}\theta$$
+$$\texttt{q}=q=\frac{1}{2\pi}\int_0^{2\pi} \frac{\mathbf{B}\cdot\nabla \varphi}{\mathbf{B}\cdot\nabla \theta}\,\textrm{d}\theta$$
 Note that $q$ can be positive or negative, its sign depends on the sign of the toroidal plasma current and magnetic field:
 $$q = s_b s_j |q|$$
 
 \subsection{Magnetic shear} \label{sec:shat}
-$$\hat{s}=\frac{r}{q}\frac{\partial q}{\partial r}$$
+$$\texttt{magnetic\_shear\_r\_minor}=\hat{s}=\frac{r}{q}\frac{\partial q}{\partial r}$$
 
 
 \subsection{Pressure gradient} \label{sec:pressure:gradient}
-$$p'_N = -\frac{2\mu_0 L_\tref}{B_\tref^2 }\frac{\partial p}{\partial r}$$
+$$\texttt{pressure\_gradient\_norm}=p'_N = -\frac{2\mu_0 L_\tref}{B_\tref^2 }\frac{\partial p}{\partial r}$$
 with $p$ the total plasma pressure (i.e. the pressure term entering the Grad-Shafranov equation). $p'_N$ (often called $\beta'$) is a quantity related to the magnetic equilibrium and does not need to be consistent with the gradients ($L_\tref/L_{n_s}$, $L_\tref/L_{T_s}$) specified for the kinetic species.\\
 Note that the low $\beta'$ approximation for the curvature drift, i.e. the approximation
 $$\mathbf{b}\times(\mathbf{b}\cdot\nabla\mathbf{b})=\frac{1}{2}\mathbf{b}\times\nabla r\frac{2\mu_0}{B^2}\frac{\partial p}{\partial r} + \frac{\mathbf{B}\times\nabla B}{B^2} \sim  \frac{\mathbf{B}\times\nabla B}{B^2}, $$
@@ -443,10 +461,17 @@ The plasma shape is described by specifying the distance of the constant poloida
 $$ a_N(r,\theta) = \frac{1}{L_\tref}\sqrt{\left[R_{\Psi_0}(r,\theta)-R_0\right]^2 + \left[Z_{\Psi_0}(r,\theta)-Z_0\right]^2} $$
 To allow regressions in the database the flux surface contours are parametrised as 
 $$ a_N(r,\theta) = \sum_{n=0}^{N_{sh}} c_n \cos(n\theta) + s_n \sin(n\theta) $$
-The specification of the local magnetic equilibrium then requires $4N_{sh}+2$ terms, given at $r=r_0$, where $N_{sh}$ is the degree of the expansion: $\{c_n,s_n,\frac{\partial c_n}{\partial r_N},\frac{\partial s_n}{\partial r_N}\}$. Typically $N_{sh}\leq8$ is sufficient to capture most of the plasma shapes but higher values can be used when needed.
+The specification of the local magnetic equilibrium then requires $4N_{sh}+2$ terms, given at $r=r_0$, where $N_{sh}$ is the degree of the expansion: 
+\begin{align*}
+\texttt{shape\_coefficients\_c} & = c_n \\
+\texttt{shape\_coefficients\_s} & = s_n \\
+\texttt{dc\_dr\_minor\_norm} & = \frac{\partial c_n}{\partial r_N} \\
+\texttt{ds\_dr\_minor\_norm} & = \frac{\partial s_n}{\partial r_N} 
+\end{align*}
+Typically $N_{sh}\leq8$ is sufficient to capture most of the plasma shapes but higher values can be used when needed.
 
 \section{Modes}
-As almost every gyrokinetic codes use a different coordinate system, it is convenient to specify the Fourier modes in a coordinate free form.\\
+As almost every gyrokinetic code uses a different coordinate system, it is convenient to specify the Fourier modes in a coordinate free form.\\
 To define this coordinate free form, let's first call, $x$ and $y$, the radial and binormal coordinates used in gyrokinetic codes to describe the turbulence in the plane perpendicular to the magnetic field. The radial coordinate $x$ is assumed to be a flux label (i.e. $\mathbf{B}\cdot \nabla x =0$).
 In a spectral representation, perturbed quantities are then written:
 \begin{equation}
@@ -462,13 +487,13 @@ with the code dependent metric elements given by $g^{ij}=\nabla i \cdot \nabla j
 \subsection{Radial wavevector} \label{sec:kx}
 The normalised coordinate independent radial wavevector is defined as
 \begin{equation}
- k_{r*}\rho_\tref = k_x \sqrt{g^{xx}(\theta=0)} \rho_\tref
+ \texttt{radial\_component\_norm}=k_{r*}\rho_\tref = k_x \sqrt{g^{xx}(\theta=0)} \rho_\tref
 \end{equation}
 
 \subsection{Binormal wavevector} \label{sec:ky}
 The normalised coordinate independent binormal wavevector is defined as
 \begin{equation}
- k_{\theta*}\rho_\tref = k_y \sqrt{g^{yy}(\theta=0)} \rho_\tref
+ \texttt{binormal\_component\_norm}=k_{\theta*}\rho_\tref = k_y \sqrt{g^{yy}(\theta=0)} \rho_\tref
 \end{equation}
 
 An alternative convenient specification of the binormal wavevector is the effective poloidal mode number normalised to the ion Larmor radius  $nq\rho_\tref/r_0$  \cite{Merlo:PoP2016}. This definition is also coordinate independent and related to a physical quantity. It will not be used here as there is no simple equivalent to specify the radial wave vector.
@@ -477,74 +502,71 @@ An alternative convenient specification of the binormal wavevector is the effect
 In the spectral representation of a flux-tube domain, the periodicity of the torus in the poloidal direction leads to the coupling of radial modes in the parallel direction:
 $$\hat{f}(k_x,k_y,\theta-\pi)=\hat{f}(k_x+\Delta k_x,k_y,\theta+\pi)$$
 with $\Delta k_x$ depending on the magnetic shear.\\
-A flux-tube extending over an odd number $N_p$ of poloidal turns with 1 radial mode $k_x$ is therefore equivalent to a flux-tube extending over 1 poloidal turn with $N_p$ coupled radial modes $k_x + p\Delta k_x$ with $p$ an integer varying from $-(N_p-1)/2$ to $(N_p+1)/2$.\\ 
-In practice, running with a sufficiently high number of poloidal turns (or coupled radial modes) is necessary to get a result independent of the boundary condition imposed at the end of the field line (when the number of poloidal turns increases, $k_\perp$ increases and the perturbations are damped by finite Larmor radius effects). 
+A flux-tube extending over an odd number $N_p$ of poloidal turns with 1 radial mode $k_x$ is therefore equivalent to a flux-tube extending over 1 poloidal turn with $N_p$ coupled radial modes $k_x + p\Delta k_x$ with $p$ an integer varying from $-(N_p-1)/2$ to $(N_p+1)/2$. The number of poloidal turns (or coupled radial modes) is given by:
+$$\texttt{poloidal\_turns}=N_p$$
+This input is only used in the database for linear runs ($N_p=1$ is enforced for non-linear runs).
+In practice, running with a sufficiently high number of poloidal turns (or coupled radial modes) is necessary to get a result independent of the boundary condition imposed at the end of the field line (when the number of poloidal turns increases, $k_\perp$ at the end of the field line increases and the perturbations are damped by finite Larmor radius effects). 
 
-\section{Electromagnetic effects}
-\subsection{Plasma beta} \label{em:beta}
-The strength of the electromagnetic effects depends on the ratio of the plasma pressure to the magnetic energy and is specified by the dimensionless ratio:
-\begin{equation}
-\beta_{eN} = 2\mu_0 \frac{n_\tref T_\tref}{B_\tref^2}
-\end{equation}
-The plasma beta entering the Amp\`ere's law is obtained from the reference value above combined with the species parameters (normalised density and temperature).
-When $\beta_{eN}=0$, the run is electrostatic. 
-
-\subsection{Switches} \label{em:switches}
-\begin{itemize}
-\item Are the fluctuations of the parallel electromagnetic vector potential $A_\parallel$ retained (magnetic field flutter)? 
-\item Are the fluctuations of the perpendicular electromagnetic vector potential retained (magnetic field compression)?
-\end{itemize}
-
-\section{Collisions and Debye length}
+\section{Collisions}
 \subsection{Plasma collisionality} \label{sec:collisionality}
-The normalised collision frequency
-\begin{equation}
- \nu_{eN} = \frac{q_\tref^4}{4\pi\epsilon_0^2}\frac{R_\tref n_\tref}{T_\tref^2}
-\end{equation}
-is used to specify the plasmas collisionality, with $R_\tref$ in $[\textrm{m}]$, $n_\tref$ in $[\textrm{m}^{-3}]$ and $T_\tref$ in $[\textrm{eV}]$. It is assumed that each species collisionality is calculated in the code consistently with the species input parameters (i.e. the normalised species temperature and density are used to calculate the collisionality of each species). This behaviour can be altered by specific collisionality switches described in Sec.~\ref{sec:colswitches}.\\
+To help capturing the variety of collisions implementation in gyrokinetic codes, the normalised collisionality is requested for each species couple $a/b$. It is defined as:
+$$\texttt{collisionality\_norm}=\nu^{a/b}_N=\frac{L_\tref}{\vthref}\frac{n_bZ_a^2Z_b^2e^4\ln \Lambda^{a/b}}{4\pi\epsilon_0m_a^2v_\textrm{tha}^3}$$
+In addition, specific collisionality switches are described in Sec.~\ref{sec:colswitches}. The exact definition of the Coulomb logarithm, $\ln \Gamma^{a/b}$, may vary from code to code, but this does not matter as it only appears within $\nu^{a/b}_N$.\\
 
-\subsection{Collisionality related switches} \label{sec:colswitches}
+
+\section{Model} 
+\subsection{Linear or non-linear run} \label{sec:runtype}
 \begin{itemize}
-\item Pitch angle scattering only is retained (as opposed to pitch angle and energy scattering)
-\item Electron-ion collisions only are retained (as opposed to all interspecies collisions)
-\item Enhancement factor for electron to (main) ion collisions. This is typically used to mimic the impact of impuritites on the electron-ions collisions. The enhancement factor multiplies the electron to main ion collisionality.
-\item Is momentum conservation ensured?
-\item Is energy conservation ensured?
-\item Are finite Larmor radius effects retained in the collision treatment?
+    \item Was it a linear or a non-linear run?
+	$$\texttt{non\_linear\_run}= \textrm{true / false}$$     
+    \item For linear runs, was it an initial value run or an eigenvalue run?
+	$$\texttt{initial\_value\_run}= \textrm{true / false}$$         
+    \item For non-linear runs, all the outputs are time averaged over the interval specified by
+    $$\texttt{time\_interval\_norm}=[t_\textrm{start} ; t_\textrm{end}]\cdot\frac{\vthref}{L_\tref}$$
 \end{itemize}
-Note that the implementation of collisions is highly code dependent and the list above does not give a complete characterisation of how collisions were treated in the run. However, this information can be retrieved from the specific code input file used for the run, which is also stored in the database, and the code documentation,\\
-
-\subsection{Debye length} \label{sec:debye}
-The Debye length
-\begin{equation}
- \lambda_{D}= \sqrt{\frac{\epsilon_0 T_\tref}{n_\tref q_\tref^2}}
-\end{equation}
-enters the linearized quasi-neutrality equation. When neglected, this term is set to zero.
-
-
-\section{Various switches} \label{sec:rotswitches}
+\subsection{Electromagnetic fluctuations} \label{em:switches}
 \begin{itemize}
-\item Are the centrifugal effects included?  
-\item Was it an initial value or eigenvalue run?
+	\item Are the fluctuations of the parallel electromagnetic vector potential $A_\parallel$ retained (magnetic field flutter)? 
+	$$\texttt{include\_a\_field\_parallel}= \textrm{true / false}$$ 
+	\item Are the fluctuations of the perpendicular electromagnetic vector potential retained (magnetic field compression)?
+	$$\texttt{include\_b\_field\_parallel}= \textrm{true / false}$$ 
 \end{itemize}
+\subsection{Rotation} \label{sec:rotswitches}
+\begin{itemize}
+	\item Are the centrifugal effects included?  
+	$$\texttt{include\_centrifugal\_effects}= \textrm{true / false}$$ 
+\end{itemize}
+\subsection{Collisions} \label{sec:colswitches}
+\begin{itemize}
+	\item Pitch angle scattering only is retained (as opposed to pitch angle and energy scattering)
+	$$\texttt{collisions\_pitch\_only}= \textrm{true / false}$$ 
+	\item Is momentum conservation ensured?
+	$$\texttt{collisions\_momentum\_conservation}= \textrm{true / false}$$ 
+	\item Is energy conservation ensured?
+	$$\texttt{collisions\_energy\_conservation}= \textrm{true / false}$$ 
+	\item Are finite Larmor radius effects retained in the collision treatment?
+	$$\texttt{collisions\_finite\_larmor\_radius}= \textrm{true / false}$$ 
+\end{itemize}
+Note that the implementation of collisions is highly code dependent and the list above does not give a complete characterisation of how collisions were treated in the run. However, this information can be retrieved from the specific code input file used for the run, which is also stored in the database.\\
+
 
 
 \section{Meta-data}
 
-\subsection{Code input file}
-The code input files are automatically parsed and all the code specific inputs stored in a large key/value table. They can be retrieved if/when needed.
-
-\subsection{Meta-data}
-For each point in the database, the following information is requested 
+\subsection{Code specific data} \label{sec:codespecfic}
+For each point in the database, the following information is requested
 \begin{itemize}
- \item The name of the code 
- \item The version of the code
- \item The name of the person submiting the entry to the database
+ \item The name of the person ($\texttt{provider}$) submitting the entry to the database
+ \item The name of the code ($\texttt{name}$)
+ \item The version of the code ($\texttt{version}$) which should unambiguously allow to retrieve the source 
+ \item All the code specific inputs (with their code specific normalisation). This information will be stored in a key/value table ($\texttt{parameters}$) and used to rebuilt the input file when desired.
 \end{itemize}
 
-\subsection{Comments and tags}
-Informative comments can also be added. For instance to indicate whether this entry is based on an experimental case or if it was used in a publication.\\
-Different entries can be grouped together by giving them a common tag. This can be interesting when submitting entries from a parameter scan.
+\subsection{Comments} \label{sec:comments}
+Informative comments can also be added  ($\texttt{comment}$ in the \texttt{ids\_properties} table). For instance to indicate whether this entry is based on an experimental case or if it was used in a publication.
+
+\subsection{Tags} \label{sec:tags}
+Different entries can be grouped together by giving them a common tag. This can be interesting when submitting entries from a parameter scan. Each tag has a name ($\texttt{name}$) and associated comments ($\texttt{comments}$).
  
 
 \chapter{Outputs}
@@ -692,6 +714,8 @@ with $s_i$ the duplicated species entries for species $s$, identified by their c
 
 
 \chapter{Entry submission procedure}
+
+Explain that the entries are submitted to the db with a json file and point at the relevant documentation on the wikipages of the git repository.
 \section{Reference cases}
 
 \section{Checks}
