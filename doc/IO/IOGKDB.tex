@@ -26,9 +26,9 @@
 
 \title{Documentation of the  gyrokinetic database GKDB}
 
-\author{Y. Camenen on behalf of the GKDB working group}
+\author{Y. Camenen and the GKDB team}
 
-\date{Last update: September 21, 2018}
+\date{Last update: October 3, 2018}
 
 \maketitle
 
@@ -42,8 +42,6 @@ The normalised inputs and outputs are independent of $\rho_*$ consistently with 
 S.I. units are used everywhere with the exception of temperatures given in eV. This means that $kT$ is noted $T$ as is customary in plasma physics (and possibly confusing).
 
 \chapter{Database structure}
-
-
 \resizebox{\textwidth}{!}{%
 \begin{tikzpicture}
 \node[draw,anchor=north west] (ids) at (0,10) {
@@ -291,24 +289,6 @@ ids\_properties\_id & integer \\
 \draw[->,>=latex,thick] ([xshift=5mm]collisions.south) |- ([yshift=-5mm]species.east);
 \end{tikzpicture}}
 
-%\begin{tikzpicture}[
-%>=latex, node distance=2cm,
-%table/.style={
-%	draw, matrix of nodes,
-%	left delimiter=\{{label={[anchor=south,rotate=90]left:Relation}},
-%	nodes={
-%		Text Width/.expanded=\tikzmatrixname-\the\pgfmatrixcurrentcolumn,
-%		inner xsep=+.5\tabcolsep, inner ysep=+0pt, align=left},
-%	inner sep=.5\pgflinewidth,
-%	font=\strut\ttfamily,
-%	rows={1}{fill=myRed}}
-%]
-%%table/.style={matrix of nodes, nodes in empty cells, column sep=-\pgflinewidth, row sep=-\pgflinewidth, nodes={draw,anchor=center,minimum width=4cm}}]
-%
-%\matrix(ids:properties) [table, label=above:ids\_properties] {
-%	provide \\ creation\_date \\ comment \\};
-%\end{tikzpicture}
-
 \chapter{Conventions and normalisations}
 \label{chap:normdef}
 \section{Cylindrical and flux coordinate systems}
@@ -424,23 +404,6 @@ Positive for peaked profiles of a flow in the direction of $\nabla \varphi$.\\
 Note that the possibility to have a species dependent toroidal velocity gradient with $\omega_{\varphi,s}\neq \omega_\Phi$ is retained. Strictly speaking, this is inconsistent with the local limit assumption $\rho_*\rightarrow 0$ but can be interesting for the interpretation of the experiments (see the discussion in section II of \cite{Camenen:PoP2016} for more details).
 
 
-\subsection{Summary of the species parameters}
-\begin{tabularx}{\textwidth}{|X|Y|Y|Y|}
-\hline
-Name & Value/Range & Type & Dimension \\
-\hline
-charge & - & Integer & $N_\textrm{species}$ \\
-mass & $>0$ & Real & $N_\textrm{species}$ \\
-density & $\geq0$ & Real & $N_\textrm{species}$  \\
-density\_log\_gradient & - & Real & $N_\textrm{species}$\\
-temperature & $>0$ & Real & $N_\textrm{species}$ \\
-temperature\_log\_gradient & - & Real & $N_\textrm{species}$ \\
-toroidal\_velocity & - & Real & 1 \\
-toroidal\_velocity\_gradient & - & Real & $N_\textrm{species}$  \\
-\hline
-\end{tabularx}\\
-All parameters above are species dependent, except the toroidal velocity that is common to all species. 
-
 \section{Magnetic equilibrium}
 The magnetic equilibrium in the vicinity of the flux surface of interest is specified by the parameters described in this section, given at $r=r_0$.
 
@@ -482,24 +445,6 @@ To allow regressions in the database the flux surface contours are parametrised 
 $$ a_N(r,\theta) = \sum_{n=0}^{N_{sh}} c_n \cos(n\theta) + s_n \sin(n\theta) $$
 The specification of the local magnetic equilibrium then requires $4N_{sh}+2$ terms, given at $r=r_0$, where $N_{sh}$ is the degree of the expansion: $\{c_n,s_n,\frac{\partial c_n}{\partial r_N},\frac{\partial s_n}{\partial r_N}\}$. Typically $N_{sh}\leq8$ is sufficient to capture most of the plasma shapes but higher values can be used when needed.
 
-\subsection{Summary of the shape parameters}
-\begin{tabularx}{\textwidth}{|X|Y|Y|Y|}
-\hline
-Name & Value/Range & Type & Dimension \\
-\hline
-r\_minor & $0\leq r_N \leq 1$ & Real & 1 \\
-ip\_sign & $\pm 1$ & Integer & 1 \\
-b\_field\_tor\_sign & $\pm 1$ & Integer & 1 \\
-q & - & Real & 1 \\
-magnetic\_shear & - & Real & 1 \\
-pressure\_gradient & - & Real & 1 \\
-c & $\geq 0$ & Real & $N_{sh}+1$ \\
-dc\_dr\_minor & - & Real & $N_{sh}+1$ \\
-s & $\geq 0$ & Real & $N_{sh}$ \\
-ds\_dr\_minor & - & Real & $N_{sh}$ \\
-\hline
-\end{tabularx}
-
 \section{Modes}
 As almost every gyrokinetic codes use a different coordinate system, it is convenient to specify the Fourier modes in a coordinate free form.\\
 To define this coordinate free form, let's first call, $x$ and $y$, the radial and binormal coordinates used in gyrokinetic codes to describe the turbulence in the plane perpendicular to the magnetic field. The radial coordinate $x$ is assumed to be a flux label (i.e. $\mathbf{B}\cdot \nabla x =0$).
@@ -535,17 +480,6 @@ with $\Delta k_x$ depending on the magnetic shear.\\
 A flux-tube extending over an odd number $N_p$ of poloidal turns with 1 radial mode $k_x$ is therefore equivalent to a flux-tube extending over 1 poloidal turn with $N_p$ coupled radial modes $k_x + p\Delta k_x$ with $p$ an integer varying from $-(N_p-1)/2$ to $(N_p+1)/2$.\\ 
 In practice, running with a sufficiently high number of poloidal turns (or coupled radial modes) is necessary to get a result independent of the boundary condition imposed at the end of the field line (when the number of poloidal turns increases, $k_\perp$ increases and the perturbations are damped by finite Larmor radius effects). 
 
-\subsection{Summary of the mode parameters}
-\begin{tabularx}{\textwidth}{|X|Y|Y|Y|}
-\hline
-Name & Value/Range & Type & Dimension \\
-\hline
-radial\_wavevector & - & Real & 1 \\
-binormal\_wavevector & $\geq 0$ & Real & 1 \\
-poloidal\_turns & $>0$ & Integer & 1 \\
-\hline
-\end{tabularx}
-
 \section{Electromagnetic effects}
 \subsection{Plasma beta} \label{em:beta}
 The strength of the electromagnetic effects depends on the ratio of the plasma pressure to the magnetic energy and is specified by the dimensionless ratio:
@@ -560,17 +494,6 @@ When $\beta_{eN}=0$, the run is electrostatic.
 \item Are the fluctuations of the parallel electromagnetic vector potential $A_\parallel$ retained (magnetic field flutter)? 
 \item Are the fluctuations of the perpendicular electromagnetic vector potential retained (magnetic field compression)?
 \end{itemize}
-
-\subsection{Summary of the electromagnetic effects parameters}
-\begin{tabularx}{\textwidth}{|X|Y|Y|Y|}
-\hline
-Name & Value/Range & Type & Dimension \\
-\hline
-beta & $\geq 0$ & Real & 1 \\
-include\_a\_parallel & 0 or 1 & Logical & 1 \\
-include\_b\_field\_parallel & 0 or 1 & Logical & 1 \\
-\hline
-\end{tabularx}
 
 \section{Collisions and Debye length}
 \subsection{Plasma collisionality} \label{sec:collisionality}
@@ -598,22 +521,6 @@ The Debye length
 \end{equation}
 enters the linearized quasi-neutrality equation. When neglected, this term is set to zero.
 
-\subsection{Summary of the collision parameters}
-\begin{tabularx}{\textwidth}{|L|S|S|S|}
-\hline
-Name & Value/Range & Type & Dimension \\
-\hline
-collisionality & $\geq 0$ & Real & 1 \\
-collision\_enhancement\_factor & $\geq 1$ & Real & 1 \\
-collision\_pitch\_only & 0 or 1 & Logical & 1 \\
-collision\_ei\_only & 0 or 1 & Logical & 1 \\
-collision\_momentum\_conservation\_flag & 0 or 1 & Logical & 1 \\
-collision\_energy\_conservation\_flag & 0 or 1 & Logical & 1 \\
-collision\_finite\_larmor\_radius & 0 or 1 & Logical & 1 \\
-debye\_length & $\geq 0$ & Real & 1 \\
-\hline
-\end{tabularx}
-
 
 \section{Various switches} \label{sec:rotswitches}
 \begin{itemize}
@@ -621,15 +528,6 @@ debye\_length & $\geq 0$ & Real & 1 \\
 \item Was it an initial value or eigenvalue run?
 \end{itemize}
 
-\subsection{Summary of the other switches}
-\begin{tabularx}{\textwidth}{|X|Y|Y|Y|}
-\hline
-Name & Value/Range & Type & Dimension \\
-\hline
-include\_centrifugal\_effects &  0 or 1 & Logical & 1 \\
-initial\_value\_run &  0 or 1 & Logical & 1 \\
-\hline
-\end{tabularx}
 
 \section{Meta-data}
 
@@ -648,19 +546,6 @@ For each point in the database, the following information is requested
 Informative comments can also be added. For instance to indicate whether this entry is based on an experimental case or if it was used in a publication.\\
 Different entries can be grouped together by giving them a common tag. This can be interesting when submitting entries from a parameter scan.
  
-\subsection{Summary of the meta-data}
-\begin{tabularx}{\textwidth}{|X|Y|Y|Y|}
-\hline
-Name & Value/Range & Type & Dimension \\
-\hline
-name &  - & String & 1 \\
-version &  - & String & 1 \\
-creator &  - & String & 1 \\
-comment &  - & String & 1 \\
-tag  &  - & String & $N_\textrm{tags}$ \\
-\hline
-\end{tabularx}
-
 
 \chapter{Outputs}
 \section{Mode amplitude}
@@ -691,16 +576,7 @@ where $t_f$ and $\gamma_f$ are the time and growth rate at the end of the simula
 $$\gamma(t)=\frac{1}{\delta t}[\ln{A_f(t)}-\ln{A_f(t-\delta t)}]$$
 with $\delta t$ depending on the code setup but in any case several times smaller than $\Delta t$. Note that any exponentially growing quantity can be used in place of $A_f$ to compute the time dependent growth rate.
 
-\subsection{Summary of the eigenvalue outputs}
-\begin{tabularx}{\textwidth}{|X|Y|Y|Y|}
-\hline
-Name & Value/Range & Type & Dimension \\
-\hline
-growth\_rate & - & Real & $N_\textrm{modes}$ \\
-growth\_rate\_tolerance & $0<\gamma_\textrm{tol}\leq 0.1$ & Real & 1 \\
-frequency & - & Real & $N_\textrm{modes}$ \\
-\hline
-\end{tabularx}
+To update.
 For initial value runs, $N_\textrm{modes}=1$ and only the linear outputs corresponding to the most unstable run are given. When the eigenvalue solver is used $N_\textrm{modes}$ indicates the number of modes for which the linear outputs are given. The tolerance on the growth rate still needs to be defined when an eigenvalue solver is used (input welcome!).
 
 
@@ -746,28 +622,6 @@ The fluxes are given for each Fourier mode, normalised to the corresponding (lin
 \end{eqnarray}
 In addition, the electrostatic magnetic flutter and magnetic compressions are stored separately (e.g. $\Gamma_{Ns}=\Gamma_{Ns,\phi}+\Gamma_{Ns,A_\parallel}+\Gamma_{Ns,B_\parallel}$) for each flux. The fluxes are normalised with respect to $n_s(\theta=0)$ rather than $n_\tref$ to allow for trace species with zero density.
 
-\subsection{Summary of the fluxes outputs}
-\begin{tabularx}{\textwidth}{|L|S|S|S|}
-\hline
-Name & Value/Range & Type & Dimension \\
-\hline
-particle\_phi\_potential\_lab\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-particle\_a\_parallel\_lab\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-particle\_b\_field\_parallel\_lab\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-momentum\_phi\_potential\_lab\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-momentum\_a\_parallel\_lab\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-momentum\_b\_field\_parallel\_lab\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-heat\_phi\_potential\_lab\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-heat\_a\_parallel\_lab\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-heat\_b\_field\_parallel\_lab\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-momentum\_phi\_potential\_co\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-momentum\_a\_parallel\_co\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-momentum\_b\_field\_parallel\_co\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-heat\_phi\_potential\_co\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-heat\_a\_parallel\_co\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-heat\_b\_field\_parallel\_co\_frame & - & Real & $N_\textrm{species}\times N_\textrm{modes}$\\ 
-\hline
-\end{tabularx}
 
 \section{Parallel mode structure}
 \subsection{Parallel grid} \label{sec:polgrid}
@@ -799,25 +653,6 @@ with $J_0$ the Bessel function. The normalisation of the moments is given by:
 \end{align*}
 As for the fluxes, the normalisation is with respect to $n_s(\theta=0)$ to allow for trace species with zero densities. 
 
-\subsection{Summary of the parallel outputs}
-\begin{tabularx}{\textwidth}{|L|R|R|Y|}
-\hline
-Name & Value/Range & Type & Dimension \\
-\hline
-poloidal\_angle & $[-N_p\pi,N_p\pi]$ & Real & $N_\textrm{pol grid}$\\
-phi\_potential\_perturbed & - & Complex & $N_\textrm{pol grid}\times N_\textrm{modes}$\\
-a\_parallel\_perturbed & - & Complex & $N_\textrm{pol grid}\times N_\textrm{modes}$\\
-b\_field\_parallel\_perturbed & - & Complex & $N_\textrm{pol grid}\times N_\textrm{modes}$\\ 
-density\_moment & - & Complex & $N_\textrm{species}\times N_\textrm{pol grid}\times N_\textrm{modes}$\\
-parallel\_velocity\_moment & - & Complex & $N_\textrm{species}\times N_\textrm{pol grid}\times N_\textrm{modes}$\\
-parallel\_temperature\_moment & - & Complex & $N_\textrm{species}\times N_\textrm{pol grid}\times N_\textrm{modes}$\\
-perpendicular\_temperature\_moment & - & Complex & $N_\textrm{species}\times N_\textrm{pol grid}\times N_\textrm{modes}$\\
-J0\_density\_moment & - & Complex & $N_\textrm{species}\times N_\textrm{pol grid}\times N_\textrm{modes}$\\
-J0\_parallel\_velocity\_moment & - & Complex & $N_\textrm{species}\times N_\textrm{pol grid}\times N_\textrm{modes}$\\
-J0\_parallel\_temperature\_moment & - & Complex & $N_\textrm{species}\times N_\textrm{pol grid}\times N_\textrm{modes}$\\
-J0\_perpendicular\_temperature\_moment & - & Complex & $N_\textrm{species}\times N_\textrm{pol grid}\times N_\textrm{modes}$\\
-\hline
-\end{tabularx}
 
 \chapter{Derived quantities}
 The derived quantities are computed internally when an entry is submitted to the GKDB and stored in the database. They can then be used for queries. 
@@ -907,116 +742,6 @@ On user request. Automatically check that the point is identical.
 
 \section{Test 1}
 A simple electrostatic test case close to the GA standard case with kinetic electrons.
-\subsection{Species}
-\begin{tabular}{c c c c c c c c c c}
-\hline
-Species & $Z_{sN}$ & $m_{sN}$ & $n_{sN}$ & $T_{sN}$ & $L_\tref/L_{n_s}$ & $L_\tref/L_{T_s}$ & $u_{sN}$ & $u'_{sN}$ \\ [0.5ex]
-\hline
-e & -1 & $2.7232\times10^{-4}$ & 1 & 1 & 3 & 9 & 0 & 0 \\ [0.5ex]
-\hline 
-D &  1 & 1 & 1 & 1 & 3 & 9 & 0 & 0 \\ [0.5ex]
-\hline
-\end{tabular}
-
-\subsection{Magnetic equilibrium}
-\begin{tabular}{c c c c c c c}
-\hline
-$r_N$ & $R_{0N}$ & $q$ & $\hat{s}$ & $s_b$ & $s_j$ & $\beta'_N$ \\ [0.5ex]
-\hline
-0.16 & 1 & 2 & 1 & 1 & 1 & 0 \\
-\hline
-\end{tabular}\\
-\begin{tabular}{c c c c c c c c c c c c c}
-\hline
-$\alpha_0$ & $\alpha_1$ & $\alpha_2$ & $\alpha_3$ & $\alpha_4$ & $\alpha_5$ & $\alpha_6$ 
-& $\beta_1$ & $\beta_2$ & $\beta_3$ & $\beta_4$ & $\beta_5$ & $\beta_6$   \\ [0.5ex]
-\hline
- 0.16 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-\hline
-\end{tabular}\\
-\begin{tabular}{c c c c c c c c c c c c c}
-\hline
-$\alpha'_0$ & $\alpha'_1$ & $\alpha'_2$ & $\alpha'_3$ & $\alpha'_4$ & $\alpha'_5$ & $\alpha'_6$ 
-& $\beta'_1$ & $\beta'_2$ & $\beta'_3$ & $\beta'_4$ & $\beta'_5$ & $\beta'_6$   \\ [0.5ex]
-\hline
-1.0 & 0 & 0 & 0 & 0 & 0  & 0 & 0 & 0 & 0  & 0 & 0 & 0 \\
-\hline
-\end{tabular}
-
-\subsection{Modes}
-\begin{tabular}{c c c c c}
-\hline
-$k_{\theta*}\rho_\tref$ & 0.2 & 0.4 & 0.6 & 0.8 \\ [0.5ex]
-\hline
-$k_{r*}\rho_\tref$ & -0.2 & 0  & 0.2  &  \\ [0.5ex]
-\hline
-\end{tabular}
-
-\subsection{Collisionality and beta}
-\begin{tabular}{c c}
-\hline
- $\beta_{eN}$ & $\nu_N$ \\ [0.5ex]
-\hline
-0 & 0 \\ [0.5ex]
-\hline
-\end{tabular}
-
-\section{Test 2}
-Same with shaping.
-
-\subsection{Species}
-\begin{tabular}{c c c c c c c c c c}
-\hline
-Species & $Z_{sN}$ & $m_{sN}$ & $n_{sN}$ & $T_{sN}$ & $L_\tref/L_{n_s}$ & $L_\tref/L_{T_s}$ & $u_{sN}$ & $u'_{sN}$ \\ [0.5ex]
-\hline
-e & -1 & $2.7232\times10^{-4}$ & 1 & 1 & 3 & 9 & 0 & 0 \\ [0.5ex]
-\hline 
-D &  1 & 1 & 1 & 1 & 3 & 9 & 0 & 0 \\ [0.5ex]
-\hline
-\end{tabular}
-
-\subsection{Magnetic equilibrium}
-\begin{tabular}{c c c c c c c}
-\hline
-$r_N$ & $R_{0N}$ & $q$ & $\hat{s}$ & $s_b$ & $s_j$ & $\beta'_N$ \\ [0.5ex]
-\hline
-0.5 & 1 & 2 & 1 & 1 & 1 & 0.03 \\
-\hline
-\end{tabular}\\
-\begin{tabular}{c c c c c c c c c c c c c}
-\hline
-$\alpha_0$ & $\alpha_1$ & $\alpha_2$ & $\alpha_3$ & $\alpha_4$ & $\alpha_5$ & $\alpha_6$ 
-& $\beta_1$ & $\beta_2$ & $\beta_3$ & $\beta_4$ & $\beta_5$ & $\beta_6$   \\ [0.5ex]
-\hline
- 0.5831 & -0.0242 & -0.0987 & 0.0321 & 0.0174 & -0.0107 & -0.0020 & 0 & 0 & 0 & 0 & 0 & 0 \\
-\hline
-\end{tabular}\\
-\begin{tabular}{c c c c c c c c c c c c c}
-\hline
-$\alpha'_0$ & $\alpha'_1$ & $\alpha'_2$ & $\alpha'_3$ & $\alpha'_4$ & $\alpha'_5$ & $\alpha'_6$ 
-& $\beta'_1$ & $\beta'_2$ & $\beta'_3$ & $\beta'_4$ & $\beta'_5$ & $\beta'_6$   \\ [0.5ex]
-\hline
-1.2898 & -0.3984 & -0.3892 & 0.2734 & 0.1136 & -0.1085  & -0.0097 & 0.2892 & 0.0195 & -0.0417  & 0.0153 & 0.0140 & -0.0065 \\
-\hline
-\end{tabular}
-
-\subsection{Modes}
-\begin{tabular}{c c c c c}
-\hline
-$k_{\theta*}\rho_\tref$ & 0.2 & 0.4 & 0.6 & 0.8 \\ [0.5ex]
-\hline
-$k_{r*}\rho_\tref$ & -0.2 & 0  & 0.2  &  \\ [0.5ex]
-\hline
-\end{tabular}
-
-\subsection{Collisionality and beta}
-\begin{tabular}{c c}
-\hline
- $\beta_{eN}$ & $\nu_N$ \\ [0.5ex]
-\hline
-0 & 0 \\ [0.5ex]
-\hline
-\end{tabular}
 
 \bibliographystyle{unsrt}
 \bibliography{IOGKDB}
