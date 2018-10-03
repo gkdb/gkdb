@@ -11,6 +11,8 @@
 \usepackage{graphicx}
 \usepackage{tabularx}
 \usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
 
 \hypersetup{bookmarks, plainpages=false, colorlinks=true, pdfborder={0 0 0 0}, linkcolor=blue, citecolor=blue, urlcolor=blue, pdftitle={GKDB documentation}}
 \newcolumntype{Y}{>{\centering\arraybackslash}X}
@@ -18,6 +20,7 @@
 \newcolumntype{S}{>{\hsize=0.6\hsize}Y}
 \newcolumntype{T}{>{\hsize=0.8\hsize}Y}
 \newcolumntype{L}{>{\hsize=1.2\hsize}X}
+\newcolumntype{M}[1]{>{\arraybackslash}m{#1}}
 
 \begin{document}
 
@@ -25,7 +28,7 @@
 
 \author{Y. Camenen on behalf of the GKDB working group}
 
-\date{Last update: January 8, 2018}
+\date{Last update: September 21, 2018}
 
 \maketitle
 
@@ -35,8 +38,276 @@
 \chapter{Preamble}
 
 This document summarises the names, conventions and normalisations adopted for the inputs and outputs of the linear gyrokinetic database (GKDB) storing results from $\delta$f, flux-tube gyrokinetic simulations.\\ 
-The normalised inputs and outputs are independent of $\rho^*$ consistently with the local approximation and a spectral representation is assumed in the perpendicular plane (i.e. homogeneous turbulence).\\
+The normalised inputs and outputs are independent of $\rho_*$ consistently with the local approximation and a spectral representation is assumed in the perpendicular plane (i.e. homogeneous turbulence).\\
 S.I. units are used everywhere with the exception of temperatures given in eV. This means that $kT$ is noted $T$ as is customary in plasma physics (and possibly confusing).
+
+\chapter{Database structure}
+
+
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}
+\node[draw,anchor=north west] (ids) at (0,10) {
+\begin{tabularx}{0.3\textwidth}{|X|M{1.7cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{ids\_properties}} \\
+\hline
+provider &  text \\
+creation\_date & timestamp  \\
+comment & text   \\   
+\hline
+\end{tabularx}\\
+};
+\node[draw, anchor=south west] (ids_prop_tag) at (7,10)  {
+\begin{tabularx}{0.3\textwidth}{|X|M{1.2cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{ids\_properties\_tag}} \\
+\hline
+ids\_properties\_id & integer \\
+tag\_id &  integer \\
+\hline
+\end{tabularx}\\
+};
+\node[draw, right = 2cm of ids_prop_tag] (tag)  {
+\begin{tabularx}{0.26\textwidth}{|X|M{1.2cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{tag}} \\
+\hline
+name & text \\
+comment &  text \\
+\hline
+\end{tabularx}\\
+};
+\node[draw, anchor = north west] (code) at (1,7.5) {
+\begin{tabularx}{0.3\textwidth}{|X|M{1.2cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{code}} \\
+\hline
+ids\_properties\_id & integer \\
+name &  text  \\
+version\_date & text  \\
+parameters & jsonb  \\   
+\hline
+\end{tabularx}\\
+};
+\node[draw,anchor=north west] (model) at (8,8){
+\begin{tabularx}{0.5\textwidth}{|X|M{1.7cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{model}} \\
+\hline
+ids\_properties\_id & integer \\
+\hyperref[sec:rotswitches]{initial\_value\_run} &  boolean  \\
+non\_linear\_run &  boolean  \\
+time\_interval\_norm & array $2\times 1$ \\
+\hyperref[em:switches]{include\_a\_field\_parallel} &  boolean  \\
+\hyperref[em:switches]{include\_b\_field\_parallel} &  boolean  \\
+\hyperref[sec:rotswitches]{include\_centrifugal\_effects} &  boolean  \\
+\hyperref[sec:colswitches]{collisions\_pitch\_only}  &  boolean  \\
+\hyperref[sec:colswitches]{collisions\_momentum\_conservation} &  boolean  \\
+\hyperref[sec:colswitches]{collisions\_energy\_conservation} &  boolean  \\
+\hyperref[sec:colswitches]{collisions\_finite\_larmor\_radius} &  boolean  \\
+\hline
+\end{tabularx}\\
+};
+\node[draw,anchor=north east] (flux_surface) at (25,8)  {
+\begin{tabularx}{0.45\textwidth}{|X|M{2.7cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{flux surface}} \\
+\hline
+ids\_properties\_id & integer \\
+\hyperref[sec:rminor]{r\_minor\_norm} &  real  \\
+\hyperref[sec:q]{q} &  real  \\
+\hyperref[sec:shat]{magnetic\_shear\_r\_minor} &  real  \\
+\hyperref[sec:pressure:gradient]{pressure\_gradient\_norm} &  real  \\
+\hyperref[sec:ipsign]{ip\_sign} &  smallint  \\
+\hyperref[sec:btsign]{b\_field\_tor\_sign} &  smallint  \\
+\hyperref[sec:shape:coefficients]{shape\_coefficients\_c} &  array $(N_{sh}+1) \times 1$  \\
+\hyperref[sec:shape:coefficients]{shape\_coefficients\_c} &  array $N_{sh} \times 1$  \\
+\hyperref[sec:shape:coefficients]{dc\_dr\_minor\_norm} &  array $(N_{sh}+1) \times 1$  \\
+\hyperref[sec:shape:coefficients]{dc\_dr\_minor\_norm} &  array $N_{sh} \times 1$  \\
+\hyperref[]{elongation} &  real  \\
+\hyperref[]{triangularity\_upper} &  real  \\
+\hyperref[]{triangularity\_lower} &  real  \\
+\hline
+\end{tabularx}\\
+};
+\node[draw,anchor=north west] (species_all) at (1,4.5) {
+\begin{tabularx}{0.35\textwidth}{|X|M{1.2cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{species\_all}} \\
+\hline
+ids\_properties\_id & integer \\
+\hyperref[em:beta]{beta\_reference} & real \\
+\hyperref[sec:debye]{debye\_length\_reference} & real \\
+\hyperref[sec:torrot]{velocity\_tor\_norm} & real \\
+\hyperref[]{shearing\_rate\_norm} & real \\
+\hyperref[sec:zeff]{zeff} & real \\     
+\hline
+\end{tabularx}\\
+};
+\node[draw,anchor=north west] (wavevector) at (1,0.5) {
+\begin{tabularx}{0.4\textwidth}{|X|M{1.2cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{wavevector}} \\
+\hline
+ids\_properties\_id & integer \\
+\hyperref[sec:kx]{radial\_component\_norm} & real \\
+\hyperref[sec:ky]{binormal\_component\_norm} & real \\
+\hyperref[sec:polturns]{poloidal\_turns} & real \\
+\hline
+\end{tabularx}\\
+};
+\node[draw,anchor=north east] (eigenmode) at (25,0.5) {
+\begin{tabularx}{0.6\textwidth}{|X|M{2cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{eigenmode}} \\
+\hline
+wavevector\_id & integer \\
+\hyperref[sec:eigenvalues]{growth\_rate\_norm} & real \\
+\hyperref[sec:eigenvalues]{frequency\_norm} & real \\
+\hyperref[sec:eigenvalues]{growth\_rate\_tolerance} & real \\
+\hyperref[sec:eigenmode:phi]{phi\_potential\_perturbed\_norm\_real} & array $N_{\theta}\times 1$ \\
+\hyperref[sec:eigenmode:phi]{phi\_potential\_perturbed\_norm\_imaginary} & array $N_{\theta}\times 1$ \\
+\hyperref[sec:eigenmode:apar]{a\_field\_parallel\_perturbed\_norm\_real} & array $N_{\theta}\times 1$ \\
+\hyperref[sec:eigenmode:apar]{a\_field\_parallel\_perturbed\_norm\_imaginary} & array $N_{\theta}\times 1$ \\
+\hyperref[sec:eigenmode:bpar]{b\_field\_parallel\_perturbed\_norm\_real} & array $N_{\theta}\times 1$ \\
+\hyperref[sec:eigenmode:bpar]{b\_field\_parallel\_perturbed\_norm\_imaginary} & array $N_{\theta}\times 1$ \\
+\hyperref[sec:polgrid]{poloidal\_angle\_grid} & array $N_{\theta}\times 1$ \\
+\hyperref[sec:fields:weight]{phi\_potential\_perturbed\_weight} & real \\
+\hyperref[sec:fields:parity]{phi\_potential\_perturbed\_parity} & real \\
+\hyperref[sec:fields:weight]{a\_field\_parallel\_perturbed\_weight} & real \\
+\hyperref[sec:fields:parity]{a\_field\_parallel\_perturbed\_parity} & real \\
+\hyperref[sec:fields:weight]{b\_field\_parallel\_perturbed\_weight} & real \\
+\hyperref[sec:fields:parity]{b\_field\_parallel\_perturbed\_parity} & real \\
+\hline
+\end{tabularx}\\	
+};
+\node[draw,anchor=north west] (species) at (1,-2.5) {
+\begin{tabularx}{0.45\textwidth}{|X|M{1.2cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{species}} \\
+\hline
+ids\_properties\_id & integer \\
+\hyperref[sec:charge]{charge\_norm} & real \\
+\hyperref[sec:mass]{mass\_norm} & real \\
+\hyperref[sec:density]{density\_norm} & real \\
+\hyperref[sec:temperature]{temperature\_norm} & real \\
+\hyperref[sec:dndr]{density\_log\_gradient\_norm} & real \\
+\hyperref[sec:dTdr]{temperature\_log\_gradient\_norm} & real \\
+\hyperref[sec:dvdr]{velocity\_toroidal\_gradient\_norm} & real \\
+\hline
+\end{tabularx}\\ 	
+};
+\node[draw,right=0.7cm of species.north east] (collisions) {
+\begin{tabularx}{0.32\textwidth}{|X|M{1.2cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{collisions}} \\
+\hline
+species1\_id & integer \\
+species2\_id & integer \\
+\hyperref[sec:collisionality]{collisionality\_norm} & real \\
+\hline
+\end{tabularx}\\ 		
+};
+\node[draw,anchor=north west] (total_fluxes_norm) at (1,-13) {
+\begin{tabularx}{0.45\textwidth}{|X|M{1.2cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{total\_fluxes\_norm}} \\
+\hline
+species\_id & integer \\
+ids\_properties\_id & integer \\
+\hyperref[sec:fluxes]{particle\_flux\_phi\_potential} & real \\
+\hyperref[sec:fluxes]{particle\_flux\_a\_field\_parallel} & real \\
+\hyperref[sec:fluxes]{particle\_flux\_b\_field\_parallel} & real \\
+\hyperref[sec:fluxes]{momentum\_flux\_phi\_potential} & real \\
+\hyperref[sec:fluxes]{momentum\_flux\_a\_field\_parallel} & real \\
+\hyperref[sec:fluxes]{momentum\_flux\_b\_field\_parallel} & real \\
+\hyperref[sec:fluxes]{energy\_flux\_phi\_potential} & real \\
+\hyperref[sec:fluxes]{energy\_flux\_a\_field\_parallel} & real \\
+\hyperref[sec:fluxes]{energy\_flux\_b\_field\_parallel} & real \\
+\hline
+\end{tabularx}\\ 				
+};
+\node[draw,anchor=north west] (fluxes_norm) at (4,-7) {
+	\begin{tabularx}{0.45\textwidth}{|X|M{1.2cm}|}
+	\hline
+	\multicolumn{2}{|c|}{\textbf{fluxes\_norm}} \\
+	\hline
+	species\_id & integer \\
+	eigenmode\_id & integer \\
+	\hyperref[sec:fluxes]{particle\_flux\_phi\_potential} & real \\
+	\hyperref[sec:fluxes]{particle\_flux\_a\_field\_parallel} & real \\
+	\hyperref[sec:fluxes]{particle\_flux\_b\_field\_parallel} & real \\
+	\hyperref[sec:fluxes]{momentum\_flux\_phi\_potential} & real \\
+	\hyperref[sec:fluxes]{momentum\_flux\_a\_field\_parallel} & real \\
+	\hyperref[sec:fluxes]{momentum\_flux\_b\_field\_parallel} & real \\
+	\hyperref[sec:fluxes]{energy\_flux\_phi\_potential} & real \\
+	\hyperref[sec:fluxes]{energy\_flux\_a\_field\_parallel} & real \\
+	\hyperref[sec:fluxes]{energy\_flux\_b\_field\_parallel} & real \\
+	\hline
+	\end{tabularx}\\ 			
+};
+\node[draw,anchor=north east] (moments_norm_rotating_frame) at (25,-10) {
+	\begin{tabularx}{0.68\textwidth}{|X|M{2cm}|}
+	\hline
+	\multicolumn{2}{|c|}{\textbf{moments\_norm\_rotating\_frame}} \\
+	\hline
+	species\_id & integer \\
+	eigenmode\_id & integer \\
+	\hyperref[sec:moments]{density\_real} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{density\_imaginary} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{velocity\_parallel\_real} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{velocity\_parallel\_imaginary} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{temperature\_parallel\_real} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{temperature\_parallel\_imaginary} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{temperature\_perpendicular\_real} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{temperature\_perpendicular\_imaginary} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{density\_gyroaveraged\_real} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{density\_gyroaveraged\_imaginary} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{velocity\_parallel\_gyroaveraged\_real} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{velocity\_parallel\_gyroaveraged\_imaginary} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{temperature\_parallel\_gyroaveraged\_real} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{temperature\_parallel\_gyroaveraged\_imaginary} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{temperature\_perpendicular\_gyroaveraged\_real} & array  $N_{\theta}\times 1$ \\
+	\hyperref[sec:moments]{temperature\_perpendicular\_gyroaveraged\_imaginary} & array  $N_{\theta}\times 1$ \\
+	\hline
+	\end{tabularx}\\ 					
+};
+\draw[->,>=latex,thick] (ids_prop_tag) -| (ids);
+\draw[->,>=latex,thick] (ids_prop_tag) -- (tag);
+\draw[->,>=latex,thick] (model) |- (ids);
+\draw[->,>=latex,thick] (flux_surface) |- (ids);
+\draw[->,>=latex,thick] (code) -| ([xshift=5mm]ids.south west);
+\draw[->,>=latex,thick] (species_all) -| ([xshift=5mm]ids.south west);
+\draw[->,>=latex,thick] (wavevector) -| ([xshift=5mm]ids.south west);
+\draw[->,>=latex,thick] (species) -| ([xshift=5mm]ids.south west);
+\draw[->,>=latex,thick] ([yshift=-12mm]eigenmode.north west) -- (wavevector.east);
+\draw[->,>=latex,thick] (total_fluxes_norm) -| ([xshift=5mm]ids.south west);
+\draw[->,>=latex,thick] ([xshift=-25mm]total_fluxes_norm.north) -- ([xshift=-25mm]species.south);
+\draw[->,>=latex,thick] (fluxes_norm) -| ([xshift=-25mm]species.south);
+\draw[->,>=latex,thick] ([yshift=30mm]fluxes_norm) -| ([xshift=-25mm]eigenmode.south east);
+\draw[->,>=latex,thick] ([xshift=-25mm]moments_norm_rotating_frame.north east) -- ([xshift=-25mm]eigenmode.south east);
+\draw[->,>=latex,thick] ([yshift=47mm]moments_norm_rotating_frame) -| ([xshift=-25mm]species.south);
+\draw[->,>=latex,thick] ([xshift=-5mm]collisions.south) |- ([yshift=5mm]species.east);
+\draw[->,>=latex,thick] ([xshift=5mm]collisions.south) |- ([yshift=-5mm]species.east);
+\end{tikzpicture}}
+
+%\begin{tikzpicture}[
+%>=latex, node distance=2cm,
+%table/.style={
+%	draw, matrix of nodes,
+%	left delimiter=\{{label={[anchor=south,rotate=90]left:Relation}},
+%	nodes={
+%		Text Width/.expanded=\tikzmatrixname-\the\pgfmatrixcurrentcolumn,
+%		inner xsep=+.5\tabcolsep, inner ysep=+0pt, align=left},
+%	inner sep=.5\pgflinewidth,
+%	font=\strut\ttfamily,
+%	rows={1}{fill=myRed}}
+%]
+%%table/.style={matrix of nodes, nodes in empty cells, column sep=-\pgflinewidth, row sep=-\pgflinewidth, nodes={draw,anchor=center,minimum width=4cm}}]
+%
+%\matrix(ids:properties) [table, label=above:ids\_properties] {
+%	provide \\ creation\_date \\ comment \\};
+%\end{tikzpicture}
 
 \chapter{Conventions and normalisations}
 \label{chap:normdef}
@@ -98,7 +369,7 @@ with $r$ an arbitrary flux surface label (taken here to be the radial coordinate
 with $V'= \frac{\partial V}{\partial r}$ and $V$ being the volume enclosed by the flux surface labelled by $r$. 
 
 \section{Normalisations}
-All quantities in the database (inputs and outputs) are normalised with respect to the reference quantities introduced in this section. Six reference quantities are first introduced (fundamental reference quantities) and then used to built other convenient normalising factors (derived reference quantities).\\
+All quantities in the database (inputs and outputs) are normalised using six reference quantities. These reference quantities are listed (fundamental reference quantities) and then used to built other convenient normalising factors (derived reference quantities).\\
 In principle, reference quantities do not need to be specified, as the purpose of the database is to relate normalised inputs to normalised outputs. 
 However, if the choice of reference quantities is left arbitrary, the same physical inputs could lead to different normalised inputs in the database depending on the normalisation choice. This is not desirable and the reference quantities are therefore imposed. 
 
@@ -126,28 +397,28 @@ For convenience, the following reference quantities are defined:
 For each species $s$, the background distribution function is supposed to be a local Maxwellian. Poloidal asymmetry in the background induced by centrifugal effects is allowed. Poloidally asymmetric quantities are given in input at $\theta=0$. Poloidal asymmetry induced by anisotropic temperatures is not included yet, but could be introduced if need be.\\ 
 At this stage, the database only stores runs with kinetic electron species (adiabatic electrons not allowed). An arbitrary number of kinetic species is allowed, but quasineutrality has to be ensured.
 
-\subsection{Charge}
+\subsection{Charge} \label{sec:charge}
 $$Z_{sN}=\frac{q_s}{q_\tref}$$
-\subsection{Mass}
+\subsection{Mass} \label{sec:mass}
 $$m_{sN}=\frac{m_s}{m_\tref}$$
-\subsection{Density}
+\subsection{Density} \label{sec:density}
 $$n_{sN}=\frac{n_s}{n_\tref}$$
-\subsection{Logarithmic density gradient}
+\subsection{Logarithmic density gradient} \label{sec:dndr}
 $$L_\tref/L_{n_s}=-L_\tref \frac{1}{n_s}\frac{\partial n_s}{\partial r}$$
 Positive for peaked profiles. 
-\subsection{Temperature}
+\subsection{Temperature} \label{sec:temperature}
 $$T_{sN}=\frac{T_s}{T_\tref}$$
-\subsection{Logarithmic temperature gradient}
+\subsection{Logarithmic temperature gradient} \label{sec:dTdr}
 $$L_\tref/L_{T_s}=-L_\tref \frac{1}{T_s}\frac{\partial T_s}{\partial r}$$
 Positive for peaked profiles.
-\subsection{Toroidal velocity}
+\subsection{Toroidal velocity} \label{sec:torrot}
 $$u_{N}=\frac{L_\tref}{\vthref}\omega_{\Phi}$$
 Positive for a flow in the direction of $\nabla \varphi$.\\
 All species are assumed to have a purely toroidal flow $\mathbf{v}_s=R^2\omega_\Phi\nabla \varphi$ with a common toroidal angular frequency proportional to the background electric field:
 $$\omega_{\Phi}=-s_j\frac{1}{|\nabla \Psi|}\frac{\partial \Phi}{\partial r},$$
 with $\Phi$ the background electrostatic potential. This assumption is consistent with the ordering used in local gyrokinetic codes, as $\omega_\Phi$ is the lowest order flow in a $\rho_*$ expansion according to neoclassical theory \cite{Hirshman:NF1981}.
 
-\subsection{Toroidal velocity gradient}
+\subsection{Toroidal velocity gradient} \label{sec:dvdr}
 $$u'_{sN}=-\frac{L_\tref^2}{\vthref}\frac{\partial \omega_{\varphi,s}}{\partial r}$$
 Positive for peaked profiles of a flow in the direction of $\nabla \varphi$.\\
 Note that the possibility to have a species dependent toroidal velocity gradient with $\omega_{\varphi,s}\neq \omega_\Phi$ is retained. Strictly speaking, this is inconsistent with the local limit assumption $\rho_*\rightarrow 0$ but can be interesting for the interpretation of the experiments (see the discussion in section II of \cite{Camenen:PoP2016} for more details).
@@ -173,29 +444,29 @@ All parameters above are species dependent, except the toroidal velocity that is
 \section{Magnetic equilibrium}
 The magnetic equilibrium in the vicinity of the flux surface of interest is specified by the parameters described in this section, given at $r=r_0$.
 
-\subsection{Radial position}
+\subsection{Radial position} \label{sec:rminor}
 $$r_N=\frac{r_0}{L_\tref}$$
 
 %\subsection{Reference point}
 %$$R_{0N} = \frac{R_0}{L_\tref} \qquad \textrm{and} \qquad Z_{0N}=\frac{Z_0}{L_\tref}$$
 
-\subsection{Toroidal field direction}
+\subsection{Toroidal field direction} \label{sec:btsign}
 $$s_b = \textrm{sign}[\mathbf{B}\cdot\nabla\varphi]$$
 
-\subsection{Toroidal current direction}
+\subsection{Toroidal current direction} \label{sec:ipsign}
 $$s_j = \textrm{sign}[\mathbf{j}\cdot\nabla\varphi]$$
 with $j$ the plasma current density. For the conventions adopted in this document, positive plasma current implies positive poloidal magnetic field.
 
-\subsection{Safety factor}
+\subsection{Safety factor} \label{sec:q}
 $$q=\frac{1}{2\pi}\int_0^{2\pi} \frac{\mathbf{B}\cdot\nabla \varphi}{\mathbf{B}\cdot\nabla \theta}\,\textrm{d}\theta$$
 Note that $q$ can be positive or negative, its sign depends on the sign of the toroidal plasma current and magnetic field:
 $$q = s_b s_j |q|$$
 
-\subsection{Magnetic shear}
+\subsection{Magnetic shear} \label{sec:shat}
 $$\hat{s}=\frac{r}{q}\frac{\partial q}{\partial r}$$
 
 
-\subsection{Pressure gradient}
+\subsection{Pressure gradient} \label{sec:pressure:gradient}
 $$p'_N = -\frac{2\mu_0 L_\tref}{B_\tref^2 }\frac{\partial p}{\partial r}$$
 with $p$ the total plasma pressure (i.e. the pressure term entering the Grad-Shafranov equation). $p'_N$ (often called $\beta'$) is a quantity related to the magnetic equilibrium and does not need to be consistent with the gradients ($L_\tref/L_{n_s}$, $L_\tref/L_{T_s}$) specified for the kinetic species.\\
 Note that the low $\beta'$ approximation for the curvature drift, i.e. the approximation
@@ -203,7 +474,7 @@ $$\mathbf{b}\times(\mathbf{b}\cdot\nabla\mathbf{b})=\frac{1}{2}\mathbf{b}\times\
 is not allowed in the database as it is inconsistent with the use of a finite pressure gradient ($p'_N$) for the equilibrium description. 
 
 
-\subsection{Plasma shape}
+\subsection{Plasma shape} \label{sec:shape:coefficients}
 A general description of local magnetic equilibria particularly convenient for gyrokinetic codes was introduced by J. Candy in \cite {Candy:PPCF2009}. It is used in the GKDB with a few minor modifications.
 The plasma shape is described by specifying the distance of the constant poloidal flux contours to the reference point $(R_0,Z_0)$  normalised to $L_\tref$:
 $$ a_N(r,\theta) = \frac{1}{L_\tref}\sqrt{\left[R_{\Psi_0}(r,\theta)-R_0\right]^2 + \left[Z_{\Psi_0}(r,\theta)-Z_0\right]^2} $$
@@ -243,13 +514,13 @@ For a given mode, the perpendicular wave vector (in real space) is given by:
 \end{equation}
 with the code dependent metric elements given by $g^{ij}=\nabla i \cdot \nabla j$. All the metric information is on the right hand side of the equation above, the resulting $k_\perp$ does not depend on the specific coordinate choices made in gyrokinetic codes.
 
-\subsection{Radial wavevector}
+\subsection{Radial wavevector} \label{sec:kx}
 The normalised coordinate independent radial wavevector is defined as
 \begin{equation}
  k_{r*}\rho_\tref = k_x \sqrt{g^{xx}(\theta=0)} \rho_\tref
 \end{equation}
 
-\subsection{Binormal wavevector}
+\subsection{Binormal wavevector} \label{sec:ky}
 The normalised coordinate independent binormal wavevector is defined as
 \begin{equation}
  k_{\theta*}\rho_\tref = k_y \sqrt{g^{yy}(\theta=0)} \rho_\tref
@@ -257,7 +528,7 @@ The normalised coordinate independent binormal wavevector is defined as
 
 An alternative convenient specification of the binormal wavevector is the effective poloidal mode number normalised to the ion Larmor radius  $nq\rho_\tref/r_0$  \cite{Merlo:PoP2016}. This definition is also coordinate independent and related to a physical quantity. It will not be used here as there is no simple equivalent to specify the radial wave vector.
 
-\section{Number of poloidal turns}
+\section{Number of poloidal turns} \label{sec:polturns}
 In the spectral representation of a flux-tube domain, the periodicity of the torus in the poloidal direction leads to the coupling of radial modes in the parallel direction:
 $$\hat{f}(k_x,k_y,\theta-\pi)=\hat{f}(k_x+\Delta k_x,k_y,\theta+\pi)$$
 with $\Delta k_x$ depending on the magnetic shear.\\
@@ -276,7 +547,7 @@ poloidal\_turns & $>0$ & Integer & 1 \\
 \end{tabularx}
 
 \section{Electromagnetic effects}
-\subsection{Plasma beta}
+\subsection{Plasma beta} \label{em:beta}
 The strength of the electromagnetic effects depends on the ratio of the plasma pressure to the magnetic energy and is specified by the dimensionless ratio:
 \begin{equation}
 \beta_{eN} = 2\mu_0 \frac{n_\tref T_\tref}{B_\tref^2}
@@ -284,9 +555,9 @@ The strength of the electromagnetic effects depends on the ratio of the plasma p
 The plasma beta entering the Amp\`ere's law is obtained from the reference value above combined with the species parameters (normalised density and temperature).
 When $\beta_{eN}=0$, the run is electrostatic. 
 
-\subsection{Switches}
+\subsection{Switches} \label{em:switches}
 \begin{itemize}
-\item Are the fluctuations of the parallel electromagnetic vector potential $A_\parallel$ retained (magnetic field flutter)?
+\item Are the fluctuations of the parallel electromagnetic vector potential $A_\parallel$ retained (magnetic field flutter)? 
 \item Are the fluctuations of the perpendicular electromagnetic vector potential retained (magnetic field compression)?
 \end{itemize}
 
@@ -302,7 +573,7 @@ include\_b\_field\_parallel & 0 or 1 & Logical & 1 \\
 \end{tabularx}
 
 \section{Collisions and Debye length}
-\subsection{Plasma collisionality}
+\subsection{Plasma collisionality} \label{sec:collisionality}
 The normalised collision frequency
 \begin{equation}
  \nu_{eN} = \frac{q_\tref^4}{4\pi\epsilon_0^2}\frac{R_\tref n_\tref}{T_\tref^2}
@@ -320,7 +591,7 @@ is used to specify the plasmas collisionality, with $R_\tref$ in $[\textrm{m}]$,
 \end{itemize}
 Note that the implementation of collisions is highly code dependent and the list above does not give a complete characterisation of how collisions were treated in the run. However, this information can be retrieved from the specific code input file used for the run, which is also stored in the database, and the code documentation,\\
 
-\subsection{Debye length}
+\subsection{Debye length} \label{sec:debye}
 The Debye length
 \begin{equation}
  \lambda_{D}= \sqrt{\frac{\epsilon_0 T_\tref}{n_\tref q_\tref^2}}
@@ -407,7 +678,7 @@ with the Fourier components of the electrostatic potential and vector potential 
 where $\rho_*=\rho_\tref/L_\tref$. The integral over $\theta$ is performed over the full length of the flux-tube (it is equivalent to an integral over one poloidal turn of the sum of all connected $k_x$ modes).\\
 The value of the mode amplitude in a linear run has little meaning by itself and is not stored in the database. 
 
-\section{Mode growth rate and frequency}
+\section{Mode growth rate and frequency} \label{sec:eigenvalues}
 The normalisations of the mode growth rate $\gamma$ and frequency $\omega_r$ are:
 \begin{equation}
  \gamma_N(k_x,k_y) = \gamma(k_x,k_y) \frac{L_\tref}{v_\textrm{thref}} \qquad \qquad \textrm{and} \qquad \qquad \omega_{rN}(k_x,k_y) = \omega_r(k_x,k_y) \frac{L_\tref}{v_\textrm{thref}}
@@ -415,8 +686,8 @@ The normalisations of the mode growth rate $\gamma$ and frequency $\omega_r$ are
 By convention, unstable modes have a positive growth rate and modes propagating in the ion diamagnetic drift direction have a positive frequency (and therefore a negative frequency when they are propagating in the electron diamagnetic drift direction).\\
 
 For initial value runs, the following (post-processing) method is used to determine the tolerance on the run convergence:
-$$\gamma_\textrm{tol} = \frac{1}{\gamma_f}\sqrt{\frac{1}{\Delta t}\int_{t_f-\Delta t}^{t_f} \left[\gamma(t)-\gamma_f\right]^2\,\textrm{dt}}$$
-where $t_f$ and $\gamma_f$ are the time and growth rate at the end of the simulation, respectively, $\Delta t = 3/\gamma_f$ and
+$$\gamma_\textrm{tol} = \frac{1}{|\gamma_f|}\sqrt{\frac{1}{\Delta t}\int_{t_f-\Delta t}^{t_f} \left[\gamma(t)-\gamma_f\right]^2\,\textrm{dt}}$$
+where $t_f$ and $\gamma_f$ are the time and growth rate at the end of the simulation, respectively, $\Delta t = 3/(0.01+|\gamma_f|)$ and
 $$\gamma(t)=\frac{1}{\delta t}[\ln{A_f(t)}-\ln{A_f(t-\delta t)}]$$
 with $\delta t$ depending on the code setup but in any case several times smaller than $\Delta t$. Note that any exponentially growing quantity can be used in place of $A_f$ to compute the time dependent growth rate.
 
@@ -435,7 +706,7 @@ For initial value runs, $N_\textrm{modes}=1$ and only the linear outputs corresp
 
 
 
-\section{Gyro-center fluxes}
+\section{Gyro-center fluxes} \label{sec:fluxes}
 \subsection{Definition}
 For each species, the flux-surface averaged contravariant radial component of the particle flux, energy flux and toroidal angular momentum flux are given by:
 \begin{eqnarray}
@@ -499,19 +770,19 @@ heat\_b\_field\_parallel\_co\_frame & - & Real & $N_\textrm{species}\times N_\te
 \end{tabularx}
 
 \section{Parallel mode structure}
-\subsection{Parallel grid}
+\subsection{Parallel grid} \label{sec:polgrid}
 The variation of the mode amplitude and phase in the parallel direction is given as a function of the poloidal angle $\theta$ defined previously. Note that the poloidal angle grid does not need to be uniform.
-\subsection{Perturbed electrostatic potential}
+\subsection{Perturbed electrostatic potential} \label{sec:eigenmode:phi}
 $$\phi_{Nf}(\theta) = \frac{\hat{\phi}_N(k_x,k_y,\theta)}{A_f(k_x,k_y)}\textrm{e}^{i\alpha}$$
 The phase factor $\alpha$ is chosen so that the imaginary part of $\phi_{Nf}$ is zero at $\theta=0$ which makes comparisons of the mode structure between different runs easier.
 When $|\phi_{Nf}(\theta=0)|=0$, $\alpha$ is taken to be zero.
  
-\subsection{Perturbed parallel vector potential (magnetic field flutter)}
+\subsection{Perturbed parallel vector potential (magnetic field flutter)} \label{sec:eigenmode:apar}
 $$A_{\parallel Nf}(\theta) = \frac{\hat{A}_{\parallel N}(k_x,k_y,\theta)}{A_f(k_x,k_y)}\textrm{e}^{i\alpha}$$
-\subsection{Perturbed parallel magnetic field (magnetic field compression)}
+\subsection{Perturbed parallel magnetic field (magnetic field compression)} \label{sec:eigenmode:bpar}
 $$B_{\parallel Nf}(\theta) = \frac{\hat{B}_{\parallel N}(k_x,k_y,\theta)}{A_f(k_x,k_y)}\textrm{e}^{i\alpha}$$
 
-\subsection{Moments of the distribution function}
+\subsection{Moments of the distribution function} \label{sec:moments}
 Moments of the distribution function, expressed in the rotating frame, can also be stored in the database. The moments are given as a function of the poloidal angle $\theta$ for each species and Fourier mode and defined as follows:
 \begin{align*}
 \delta n_s(\theta,k_x,k_y) & =  \int \hat{f}_s(\theta,k_x,k_y) \,\textrm{d}\mathbf{v}& \delta n_s^{J_0}(\theta,k_x,k_y) & =  \int J_0(k_\perp\rho_s) \hat{f}_s(\theta,k_x,k_y) \,\textrm{d}\mathbf{v} \\
@@ -551,7 +822,7 @@ J0\_perpendicular\_temperature\_moment & - & Complex & $N_\textrm{species}\times
 \chapter{Derived quantities}
 The derived quantities are computed internally when an entry is submitted to the GKDB and stored in the database. They can then be used for queries. 
 
-\section{Relative fields amplitude}
+\section{Relative fields weight} \label{sec:fields:weight}
 The ratio of each field to the total mode amplitude is stored:
 \begin{equation*}
 A_\phi = \sqrt{\frac{1}{2\pi}\int |\phi_{Nf}(\theta)|^2\,\textrm{d}\theta}, \qquad \qquad
@@ -559,7 +830,7 @@ A_{A_\parallel} = \sqrt{\frac{1}{2\pi}\int |A_{\parallel Nf}(\theta)|^2\,\textrm
 A_{B_\parallel} = \sqrt{\frac{1}{2\pi}\int |B_{\parallel Nf}(\theta)|^2\,\textrm{d}\theta}
 \end{equation*}
 
-\section{Fields parity}
+\section{Fields parity} \label{sec:fields:parity}
 The field parity with respect to $\theta=0$ is computed as follows:
 \begin{equation*}
 \pi_\phi = \frac{\left| \int \phi_{Nf}(\theta) \,\textrm{d}\theta \right|}{\int |\phi_{Nf}(\theta)| \,\textrm{d}\theta}, \qquad \qquad 
@@ -575,7 +846,7 @@ The flux surface elongation $\kappa$, top triangularity $\delta_\textrm{top}$ an
 with $R_\textrm{min}=\min[R_{\Psi_0}]$, $R_\textrm{max}=\max[R_{\Psi_0}]$, $Z_\textrm{min}=\min[Z_{\Psi_0}]$ and $Z_\textrm{max}=\max[Z_{\Psi_0}]$.
 
 \section{Global species parameters}
-\subsection{Effective charge}
+\subsection{Effective charge} \label{sec:zeff}
 To have a fast and simple way to query on the plasma composition, the effective charge is computed:
 $$Z_\textrm{eff} = \sum_\textrm{ions} n_{sN}Z_{sN}^2$$ 
 
