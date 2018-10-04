@@ -122,9 +122,9 @@ ids\_properties\_id & integer \\
 \hyperref[sec:shape:coefficients]{shape\_coefficients\_c} &  array $N_{sh} \times 1$  \\
 \hyperref[sec:shape:coefficients]{dc\_dr\_minor\_norm} &  array $(N_{sh}+1) \times 1$  \\
 \hyperref[sec:shape:coefficients]{dc\_dr\_minor\_norm} &  array $N_{sh} \times 1$  \\
-\hyperref[]{elongation} &  real  \\
-\hyperref[]{triangularity\_upper} &  real  \\
-\hyperref[]{triangularity\_lower} &  real  \\
+\hyperref[sec:shape]{elongation} &  real  \\
+\hyperref[sec:shape]{triangularity\_upper} &  real  \\
+\hyperref[sec:shape]{triangularity\_lower} &  real  \\
 \hline
 \end{tabularx}\\
 };
@@ -397,7 +397,7 @@ Positive for a flow in the direction of $\nabla \varphi$.\\
 All species are assumed to have a purely toroidal flow $\mathbf{v}_s=R^2\omega_\Phi\nabla \varphi$ with a common toroidal angular frequency proportional to the background electric field:
 $$\omega_{\Phi}=-2\pi\frac{\partial \Phi}{\partial \Psi},$$
 with $\Phi$ the background electrostatic potential. This assumption is consistent with the ordering used in local gyrokinetic codes, as $\omega_\Phi$ is the lowest order flow in a $\rho_*$ expansion according to neoclassical theory~\cite{Hirshman:NF1981}.
-\subsection{Perpendicular flow shear} \label{sec:exb}
+\subsection{Perpendicular flow shear (non-linear runs only)} \label{sec:exb}
 The $E\times B$ shearing rate is given by:
 $$\texttt{shearing\_rate\_norm}=\gamma_{E_N}=-\frac{L_\tref}{\vthref}\frac{1}{B_\tref}\left(\frac{\partial \Psi}{\partial r}\right)^2\frac{\partial^2 \Phi}{\partial \Psi^2}$$
 This input is only used in the database for non-linear runs (for linear runs, only $\gamma_{E_N}=0$ is allowed).
@@ -578,7 +578,7 @@ Different entries can be grouped together by giving them a common tag. This can 
    \item For \textit{initial value} runs, there is only one eigenmode per wavevector (the most unstable mode) and the outputs are given at the last time step of the simulation (no time dependent information is stored)
    \item For \textit{eigenvalue} runs, there can be several eigenmodes per wavevector
   \end{itemize}	  
- \item For \textit{non-linear} runs, all outputs are time averaged over the interval $\texttt{time\_interval\_norm}$ specified in the $\texttt{model}$ table.\\ 
+ \item For \textit{non-linear} runs, the fluxes, parallel mode structure and moments outputs are time averaged over the interval $\texttt{time\_interval\_norm}$ specified in the $\texttt{model}$ table.\\ 
  The \texttt{total\_fluxes\_norm} table, containing the fluxes summed over $k_x$ and $k_y$, is only filled for non-linear runs.
 \end{itemize}
 
@@ -599,7 +599,7 @@ The value of the mode amplitude in a linear run has little meaning by itself and
 For non-linear runs, the dimensionless mode amplitude is taken to be 
 $$A_f(k_x,k_y) = 1$$
 
-\section{Mode growth rate and frequency} \label{sec:eigenvalues}
+\section{Mode growth rate and frequency (linear runs only)} \label{sec:eigenvalues}
 The normalised mode growth rate $\gamma$ and frequency $\omega_r$ are defined as:
 \begin{align*}
  \texttt{growth\_rate\_norm}&=\gamma_N(k_x,k_y) = \gamma(k_x,k_y) \frac{L_\tref}{v_\textrm{thref}}\\
@@ -615,62 +615,94 @@ The tolerance on the growth rate still needs to be defined in a code independent
 
 
 
-\section{Gyro-center fluxes} \label{sec:fluxes}
+\section{Fluxes} \label{sec:fluxes}
 \subsection{Definition}
-For each species, the flux-surface averaged contravariant radial component of the particle flux, energy flux and toroidal angular momentum flux are given by:
+For each species, the flux-surface averaged contravariant radial component of the particle flux, energy flux and toroidal angular momentum flux computed in particle phase space are given by:
 \begin{eqnarray}
- \Gamma_s &=& \left<\int f_s \left[\mathbf{v}_\mathbf{E} + \mathbf{v}_{\mathbf{B}_\perp} + \mathbf{v}_{\nabla B_\parallel}  \right]\cdot \nabla r\,\textrm{d}\mathbf{v}\right> \\
-  \Pi_s   &=& \left<\int s_b m_s R \frac{B_t}{B}v_\parallel f_s  \left[\mathbf{v}_\mathbf{E} + \mathbf{v}_{\mathbf{B}_\perp} + \mathbf{v}_{\nabla B_\parallel}  \right] \cdot \nabla r\,\textrm{d}\mathbf{v}\right> \\
-      Q_s &=& \left<\int \frac{1}{2}m_sv^2 f_s \left[\mathbf{v}_\mathbf{E} + \mathbf{v}_{\mathbf{B}_\perp} + \mathbf{v}_{\nabla B_\parallel}  \right] \cdot \nabla r\,\textrm{d}\mathbf{v}\right> 
+ \Gamma_s &=& \left<\int \textrm{Re}\left[f_s^{gc}\right] \textrm{Re}\left[\mathbf{v}_\mathbf{E} + \mathbf{v}_{\mathbf{B}_\perp} + \mathbf{v}_{\nabla B_\parallel}  \right]\cdot \nabla r\,\textrm{d}\mathbf{v}\right> \\
+  \Pi_s   &=& \left<\int s_b m_s R \frac{|B_t|}{B}v_\parallel \textrm{Re}\left[f_s^{gc}\right] \textrm{Re}  \left[\mathbf{v}_\mathbf{E} + \mathbf{v}_{\mathbf{B}_\perp} + \mathbf{v}_{\nabla B_\parallel}  \right] \cdot \nabla r\,\textrm{d}\mathbf{v}\right> \\
+      Q_s &=& \left<\int \frac{1}{2}m_sv^2 \textrm{Re}\left[f_s^{gc}\right] \textrm{Re} \left[\mathbf{v}_\mathbf{E} + \mathbf{v}_{\mathbf{B}_\perp} + \mathbf{v}_{\nabla B_\parallel}  \right] \cdot \nabla r\,\textrm{d}\mathbf{v}\right> 
 \end{eqnarray}
-where $f_s$ is the perturbed guiding center distribution function of species $s$ and the two terms on the right hand side correspond to the fluxes induced by the electrostatic, magnetic flutter and magnetic compression drifts:
+where $f_s^{gc}$ is the guiding center perturbed distribution function of species $s$ (see Sec.~\ref{sec:gctogy} for the relationship with the gyro-center distribution function $f_s$). The three terms in the square brackets are the electrostatic, magnetic flutter and magnetic compression drifts, respectively:
 \begin{equation}
  \mathbf{v}_\mathbf{E} = \frac{\mathbf{b}\times \nabla \left<\phi\right>_\textrm{gy} }{B} \qquad \qquad \qquad
  \mathbf{v}_{\mathbf{B}_\perp} = -v_\parallel \frac{\mathbf{b}\times \nabla \left<A_{\parallel}\right>_\textrm{gy}}{B}  \qquad \qquad \qquad
- \mathbf{v}_{\nabla B_\parallel} = \frac{\mu}{Ze} \frac{\mathbf{b}\times \nabla \left<B_{\parallel}\right>_\textrm{gy}}{B}
+ \mathbf{v}_{\nabla B_\parallel} = \frac{\mu}{Z_s e} \frac{\mathbf{b}\times \nabla \left<B_{\parallel}\right>_\textrm{gy}}{B}
 \end{equation}
-with $\left<\phi\right>_\textrm{gy}$, $\left<A_{\parallel}\right>_\textrm{gy}$ and $\left<B_{\parallel}\right>_\textrm{gy}$, the gyro-averaged perturbed electrostatic potential, parallel vector potential and parallel magnetic field, respectively. The fluxes are positive when outward (for a transported quantity that is positive).\\
+with $\left<\phi\right>_\textrm{gy}$, $\left<A_{\parallel}\right>_\textrm{gy}$ and $\left<B_{\parallel}\right>_\textrm{gy}$, the gyro-averaged perturbed electrostatic potential, parallel vector potential and parallel magnetic field, respectively. \\
+The fluxes are positive when outward (for a transported quantity that is positive) and are given in the Laboratory frame. The relationship between fluxes expressed in the Laboratory frame and in the rotating frame of angular frequency $\omega_\Phi$ is given in Sec.~\ref{sec:labrotframes}\\
 Note that the momentum flux in the expression above only includes the toroidal projection of the parallel momentum. The toroidal projection of the perpendicular momentum also contributes to the total momentum flux, see e.g. \cite{Scott:PoP2010}. This contribution is not included here but could be added in the future. 
 
-\subsection{Laboratory frame versus rotating frame}
-To describe inertial effects associated with the background rotation, several gyrokinetic codes (e.g. GKW, GENE, GS2) solve the gyro-kinetic equation in the frame rotating as a rigid body with the angular frequency $\omega_\Phi$. The Laboratory frame fluxes are of course the relevant ones for comparison with the experiments. They are related to quantities expressed in the rotating frame as follows:
-\begin{eqnarray}
-\Gamma_s^\textrm{L} &=& \Gamma_s^\textrm{co} \\
-\Pi_s^\textrm{L} &=& \Pi_s^\textrm{co} + \left< \int m_s\omega_\Phi\left(\frac{RB_t}{B}\right)^2 f_s \mathbf{v}_\chi\cdot \nabla r  \,\textrm{d}\mathbf{v}\right>\\
-Q_s^\textrm{L} &=& Q_s^\textrm{co} + \omega_\Phi \Pi_s^\textrm{co}
-+ \left< \int \frac{1}{2}m_s(R\omega_\Phi)^2 f_s  \mathbf{v}_\chi\cdot \nabla r \,\textrm{d}\mathbf{v}\right> 
-%Q_s^\textrm{L} &=& Q_s^\textrm{co} + \left< \int m_sv_\parallel\omega_\Phi\frac{RB_t}{B} f_s \mathbf{v}_\chi\cdot \nabla r  \,\textrm{d}\mathbf{v}\right> 
-%+ \left< \int \frac{1}{2}m_s(R\omega_\Phi)^2 f_s  \mathbf{v}_\chi\cdot \nabla r \,\textrm{d}\mathbf{v}\right> 
-\end{eqnarray}
-with $\mathbf{v}_\chi=\mathbf{v}_\mathbf{E} + \mathbf{v}_{\mathbf{B}_\perp}+ \mathbf{v}_{\nabla B_\parallel}$ and all the expressions in the right hand sides evaluated in the rotating frame.
-For convenience, both the Laboratory frame and rotating frame fluxes are stored in the database. 
-
+\subsection{Spectral representation}
+Introducing the quantity 
+$$\chi= \left<\phi\right>_\textrm{gy} - v_\parallel \left<A_{\parallel}\right>_\textrm{gy} + \frac{\mu}{Z_s e}\left<B_{\parallel}\right>_\textrm{gy}$$ 
+and noting that 
+\begin{equation*}
+\left< \textrm{Re}\left[f_s\right] \textrm{Re}\left[\frac{\partial \chi}{\partial y}\right]\right>  = \sum_{k_x,k_y>0}\left< 2  k_y \textrm{Im}\left[\hat{f_s}(k_x,k_y,\theta)\hat{\chi}^\dagger(k_x,k_y,\theta)\right] \right>  
+\end{equation*}
+the fluxes can be expressed as
+\begin{align*}
+\Gamma_s & = \sum_{k_x,ky>0} \Gamma_s(k_x,k_y) = \sum_{k_x,ky>0}  \left<2k_y\frac{\mathbf{b}\times \nabla y}{B}\cdot \nabla r \int \textrm{Im}\left[\hat{f}_s\hat{\chi}^\dagger \right] \,\textrm{d}\mathbf{v}\right>\\
+\end{align*}
 
 \subsection{Normalisation}
-The fluxes are given for each Fourier mode, normalised to the corresponding (linear) mode amplitude and made dimensionless as follows:
+The fluxes given for each Fourier mode are normalised to the corresponding mode amplitude (taken to be 1 for non-linear runs) and made dimensionless as follows:
 \begin{eqnarray}
  \Gamma_{sN}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{\Gamma_s(k_x,k_y)}{n_s \vthref \rho_*^2}\\
  \Pi_{sN}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{\Pi_s(k_x,k_y)}{n_s m_\tref L_\tref \vthref^2 \rho_*^2}\\
  Q_{sN}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{Q_s(k_x,k_y)}{n_s T_\tref \vthref \rho_*^2}
 \end{eqnarray}
-In addition, the electrostatic magnetic flutter and magnetic compressions are stored separately (e.g. $\Gamma_{Ns}=\Gamma_{Ns,\phi}+\Gamma_{Ns,A_\parallel}+\Gamma_{Ns,B_\parallel}$) for each flux. The fluxes are normalised with respect to $n_s(\theta=0)$ rather than $n_\tref$ to allow for trace species with zero density.
+In addition, the electrostatic, magnetic flutter and magnetic compression contributions are stored separately (e.g. $\Gamma_{sN}=\Gamma_{sN,\phi}+\Gamma_{sN,A_\parallel}+\Gamma_{sN,B_\parallel}$) for each flux. The fluxes are normalised with respect to $n_s(\theta=0)$ rather than $n_\tref$ to allow for trace species with zero density.
+\begin{align*}
+ \texttt{particle\_flux\_phi\_potential} &= \Gamma_{sN,\phi} \\
+ \texttt{particle\_flux\_a\_field\_parallel} &= \Gamma_{sN,A_\parallel} \\
+ \texttt{particle\_flux\_b\_field\_parallel} &= \Gamma_{sN,B_\parallel} \\
+ \texttt{momentum\_flux\_phi\_potential} &= \Pi_{sN,\phi} \\
+ \texttt{momentum\_flux\_a\_field\_parallel} &= \Pi_{sN,A_\parallel} \\
+ \texttt{momentum\_flux\_b\_field\_parallel} &= \Pi_{sN,B_\parallel} \\
+ \texttt{energy\_flux\_phi\_potential} &= Q_{sN,\phi} \\
+ \texttt{energy\_flux\_a\_field\_parallel} &= Q_{sN,A_\parallel} \\
+ \texttt{energy\_flux\_b\_field\_parallel} &= Q_{sN,B_\parallel}
+\end{align*}
 
+\subsection{Total fluxes (non-linear runs only)}
+For non-linear runs, the total fluxes are defined as the sum of the fluxes over all wavevectors included in the simulation:
+\begin{eqnarray}
+\Gamma_{sN}^\textrm{tot} &=& \sum_{k_x, k_y} \Gamma_{sN}(k_x,k_y)\\
+\Pi_{sN}^\textrm{tot} &=&  \sum_{k_x, k_y}\Pi_{sN}(k_x,k_y)\\
+Q_{sN}^\textrm{tot} &=&  \sum_{k_x, k_y} Q_{sN}(k_x,k_y) 
+\end{eqnarray}
+The total fluxes have the same names as the fluxes per wavevector but are stored in the table \texttt{total\_fluxes\_norm}.
 
 \section{Parallel mode structure}
 \subsection{Parallel grid} \label{sec:polgrid}
-The variation of the mode amplitude and phase in the parallel direction is given as a function of the poloidal angle $\theta$ defined previously. Note that the poloidal angle grid does not need to be uniform.
+The variation of the mode amplitude and phase in the parallel direction is given as a function of the poloidal angle $\theta$ defined previously. Note that the poloidal angle grid does not need to be uniform but has to be increasing.
+$$\texttt{poloidal\_angle\_grid}=\theta$$ 
+
 \subsection{Perturbed electrostatic potential} \label{sec:eigenmode:phi}
 $$\phi_{Nf}(\theta) = \frac{\hat{\phi}_N(k_x,k_y,\theta)}{A_f(k_x,k_y)}\textrm{e}^{i\alpha}$$
-The phase factor $\alpha$ is chosen so that the imaginary part of $\phi_{Nf}$ is zero at $\theta=0$ which makes comparisons of the mode structure between different runs easier.
-When $|\phi_{Nf}(\theta=0)|=0$, $\alpha$ is taken to be zero.
+The phase factor $\alpha$ is chosen so that the imaginary part of $\phi_{Nf}$ is zero at $\theta=0$ which makes comparisons of the mode structure between different runs easier. When $|\phi_{Nf}(\theta=0)|=0$, $\alpha$ is taken to be zero. All the parallel outputs are rotated in the complex plane using the same value of $\alpha$.
+\begin{align*}
+\texttt{phi\_potential\_perturbed\_norm\_real}&=\textrm{Re}\left[ \phi_{Nf}(\theta) \right]\\
+\texttt{phi\_potential\_perturbed\_norm\_imaginary}&=\textrm{Im}\left[ \phi_{Nf}(\theta) \right]
+\end{align*}
  
 \subsection{Perturbed parallel vector potential (magnetic field flutter)} \label{sec:eigenmode:apar}
 $$A_{\parallel Nf}(\theta) = \frac{\hat{A}_{\parallel N}(k_x,k_y,\theta)}{A_f(k_x,k_y)}\textrm{e}^{i\alpha}$$
+\begin{align*}
+\texttt{a\_field\_parallel\_perturbed\_norm\_real}&=\textrm{Re}\left[ A_{\parallel Nf}(\theta) \right]\\
+\texttt{a\_field\_parallel\_perturbed\_norm\_imaginary}&=\textrm{Im}\left[ A_{\parallel Nf}(\theta) \right]
+\end{align*}
+
 \subsection{Perturbed parallel magnetic field (magnetic field compression)} \label{sec:eigenmode:bpar}
 $$B_{\parallel Nf}(\theta) = \frac{\hat{B}_{\parallel N}(k_x,k_y,\theta)}{A_f(k_x,k_y)}\textrm{e}^{i\alpha}$$
+\begin{align*}
+\texttt{b\_field\_parallel\_perturbed\_norm\_real}&=\textrm{Re}\left[ B_{\parallel Nf}(\theta) \right]\\
+\texttt{b\_field\_parallel\_perturbed\_norm\_imaginary}&=\textrm{Im}\left[ B_{\parallel Nf}(\theta) \right]
+\end{align*}
 
 \subsection{Moments of the distribution function} \label{sec:moments}
-Moments of the distribution function, expressed in the rotating frame, can also be stored in the database. The moments are given as a function of the poloidal angle $\theta$ for each species and Fourier mode and defined as follows:
+Moments of the gyro-center distribution function, expressed in the Laboratory frame, can also be stored in the database. The moments are given as a function of the poloidal angle $\theta$ for each species and Fourier mode:
 \begin{align*}
 \delta n_s(\theta,k_x,k_y) & =  \int \hat{f}_s(\theta,k_x,k_y) \,\textrm{d}\mathbf{v}& \delta n_s^{J_0}(\theta,k_x,k_y) & =  \int J_0(k_\perp\rho_s) \hat{f}_s(\theta,k_x,k_y) \,\textrm{d}\mathbf{v} \\
 \delta v_{\parallel s}(\theta,k_x,k_y) & =  \int v_\parallel \hat{f}_s(\theta,k_x,k_y) \,\textrm{d}\mathbf{v}& \delta v_{\parallel s}^{J_0}(\theta,k_x,k_y) & =  \int v_\parallel J_0(k_\perp\rho_s) \hat{f}_s(\theta,k_x,k_y) \,\textrm{d}\mathbf{v}\\
@@ -679,49 +711,111 @@ Moments of the distribution function, expressed in the rotating frame, can also 
 \end{align*}
 with $J_0$ the Bessel function. The normalisation of the moments is given by:
 \begin{align*}
-\delta n_{sN} & = \frac{\delta n_s}{n_s A_f\rho_*}& \delta n_{sN}^{J_0} & = \frac{\delta n_s^{J_0}}{n_s A_f\rho_*} \\
-\delta v_{\parallel sN} & = \frac{\delta v_{\parallel s}}{n_s\vthref A_f\rho_*}& \delta v_{\parallel sN}^{J_0} & = \frac{\delta v_{\parallel s}^{J_0}}{n_s\vthref A_f\rho_*} \\
-\delta T_{\perp sN} & = \frac{\delta T_{\perp s}}{n_s T_\tref A_f\rho_*}& \delta T_{\perp sN}^{J_0} & = \frac{\delta T_{\perp s}^{J_0}}{n_s T_\tref A_f\rho_*} \\
-\delta T_{\parallel sN} & = \frac{\delta T_{\parallel s}}{n_s T_\tref A_f\rho_*}& \delta T_{\parallel sN}^{J_0} & = \frac{\delta T_{\parallel s}^{J_0}}{n_s T_\tref A_f\rho_*} 
+\delta n_{sN} & = \frac{\delta n_s}{n_s A_f\rho_*}\textrm{e}^{i\alpha} & \delta n_{sN}^{J_0} & = \frac{\delta n_s^{J_0}}{n_s A_f\rho_*}\textrm{e}^{i\alpha} \\
+\delta v_{\parallel sN} & = \frac{\delta v_{\parallel s}}{n_s\vthref A_f\rho_*}\textrm{e}^{i\alpha}& \delta v_{\parallel sN}^{J_0} & = \frac{\delta v_{\parallel s}^{J_0}}{n_s\vthref A_f\rho_*}\textrm{e}^{i\alpha} \\
+\delta T_{\perp sN} & = \frac{\delta T_{\perp s}}{n_s T_\tref A_f\rho_*}\textrm{e}^{i\alpha}& \delta T_{\perp sN}^{J_0} & = \frac{\delta T_{\perp s}^{J_0}}{n_s T_\tref A_f\rho_*}\textrm{e}^{i\alpha} \\
+\delta T_{\parallel sN} & = \frac{\delta T_{\parallel s}}{n_s T_\tref A_f\rho_*}\textrm{e}^{i\alpha}& \delta T_{\parallel sN}^{J_0} & = \frac{\delta T_{\parallel s}^{J_0}}{n_s T_\tref A_f\rho_*}\textrm{e}^{i\alpha} 
 \end{align*}
 As for the fluxes, the normalisation is with respect to $n_s(\theta=0)$ to allow for trace species with zero densities. 
 
-
 \chapter{Derived quantities}
+
 The derived quantities are computed internally when an entry is submitted to the GKDB and stored in the database. They can then be used for queries. 
 
 \section{Relative fields weight} \label{sec:fields:weight}
 The ratio of each field to the total mode amplitude is stored:
-\begin{equation*}
-A_\phi = \sqrt{\frac{1}{2\pi}\int |\phi_{Nf}(\theta)|^2\,\textrm{d}\theta}, \qquad \qquad
-A_{A_\parallel} = \sqrt{\frac{1}{2\pi}\int |A_{\parallel Nf}(\theta)|^2\,\textrm{d}\theta}, \qquad \qquad
-A_{B_\parallel} = \sqrt{\frac{1}{2\pi}\int |B_{\parallel Nf}(\theta)|^2\,\textrm{d}\theta}
-\end{equation*}
+\begin{align*}
+\texttt{phi\_potential\_perturbed\_weight}& =A_\phi = \sqrt{\frac{1}{2\pi}\int |\phi_{Nf}(\theta)|^2\,\textrm{d}\theta}\\
+\texttt{a\_field\_parallel\_perturbed\_weight} &= A_{A_\parallel} = \sqrt{\frac{1}{2\pi}\int |A_{\parallel Nf}(\theta)|^2\,\textrm{d}\theta}\\
+\texttt{b\_field\_parallel\_perturbed\_weight} &= A_{B_\parallel} = \sqrt{\frac{1}{2\pi}\int |B_{\parallel Nf}(\theta)|^2\,\textrm{d}\theta}
+\end{align*}
 
 \section{Fields parity} \label{sec:fields:parity}
-The field parity with respect to $\theta=0$ is computed as follows:
-\begin{equation*}
-\pi_\phi = \frac{\left| \int \phi_{Nf}(\theta) \,\textrm{d}\theta \right|}{\int |\phi_{Nf}(\theta)| \,\textrm{d}\theta}, \qquad \qquad 
-\pi_{A_\parallel} = \frac{\left| \int A_{\parallel Nf}(\theta) \,\textrm{d}\theta \right|}{\int |A_{\parallel Nf}(\theta)| \,\textrm{d}\theta}, \qquad \qquad 
-\pi_{B_\parallel} = \frac{\left| \int B_{\parallel Nf}(\theta) \,\textrm{d}\theta \right|}{\int |B_{\parallel Nf}(\theta)| \,\textrm{d}\theta}
-\end{equation*}
+The field parity is computed as follows:
+\begin{align*}
+\texttt{phi\_potential\_perturbed\_parity}& =\pi_\phi = \frac{\left| \int \phi_{Nf}(\theta) \,\textrm{d}\theta \right|}{\int |\phi_{Nf}(\theta)| \,\textrm{d}\theta}\\
+\texttt{a\_field\_parallel\_perturbed\_parity} &=\pi_{A_\parallel} = \frac{\left| \int A_{\parallel Nf}(\theta) \,\textrm{d}\theta \right|}{\int |A_{\parallel Nf}(\theta)| \,\textrm{d}\theta}\\ 
+\texttt{b\_field\_parallel\_perturbed\_parity} &= \pi_{B_\parallel} = \frac{\left| \int B_{\parallel Nf}(\theta) \,\textrm{d}\theta \right|}{\int |B_{\parallel Nf}(\theta)| \,\textrm{d}\theta}
+\end{align*}
 
-\section{Simplified shape description}
+
+\section{Simplified shape description} \label{sec:shape}
 The flux surface elongation $\kappa$, top triangularity $\delta_\textrm{top}$ and bottom triangularity $\delta_\textrm{bot}$ are computed as follows:
-\begin{equation*}
-\kappa = \frac{Z_\textrm{max}-Z_\textrm{min}}{R_\textrm{max}-R_\textrm{min}}, \qquad \qquad \delta^\textrm{top} = \frac{R_{\Psi_0}(Z_\textrm{max})-R_0}{r_0}, \qquad \qquad \delta^\textrm{bot} = \frac{R_{\Psi_0}(Z_\textrm{min})-R_0}{r_0}
-\end{equation*}
+\begin{align*}
+\texttt{elongation} &= \kappa = \frac{Z_\textrm{max}-Z_\textrm{min}}{R_\textrm{max}-R_\textrm{min}}\\ 
+\texttt{triangularity\_upper} &=\delta^\textrm{top} = \frac{R_{\Psi_0}(Z_\textrm{max})-R_0}{r_0}\\
+\texttt{triangularity\_lower} &=\delta^\textrm{bot} = \frac{R_{\Psi_0}(Z_\textrm{min})-R_0}{r_0}
+\end{align*}
 with $R_\textrm{min}=\min[R_{\Psi_0}]$, $R_\textrm{max}=\max[R_{\Psi_0}]$, $Z_\textrm{min}=\min[Z_{\Psi_0}]$ and $Z_\textrm{max}=\max[Z_{\Psi_0}]$.
 
 \section{Global species parameters}
 \subsection{Effective charge} \label{sec:zeff}
 To have a fast and simple way to query on the plasma composition, the effective charge is computed:
-$$Z_\textrm{eff} = \sum_\textrm{ions} n_{sN}Z_{sN}^2$$ 
+$$\texttt{zeff}=Z_\textrm{eff} = \sum_\textrm{ions} n_{sN}Z_{sN}^2$$ 
 
 \subsection{Sum over duplicated species}
 To make query on entries with duplicate species more convenient, a duplicate species index is built that allow to query directly on:
 $$n_{sN}=\sum_{s_i}n_{s_iN}, \qquad \qquad \frac{L_\tref}{L_{n_s}}=\frac{1}{n_{sN}}\sum_{s_i}n_{s_iN}\frac{L_\tref}{L_{n_{s_i}}}, \qquad \qquad \frac{L_\tref}{L_{T_s}}=\frac{1}{n_{sN}}\sum_{s_i}n_{s_iN}\frac{L_\tref}{L_{T_{s_i}}}$$
 with $s_i$ the duplicated species entries for species $s$, identified by their common charge, mass and temperature.
+
+\chapter{Transformation of database outputs}
+
+\section{Laboratory frame versus rotating frame} \label{sec:labrotframes}
+To describe inertial effects associated with the background rotation, several gyrokinetic codes (e.g. GKW, GENE, GS2) solve the gyro-kinetic equation in the frame rotating as a rigid body with the angular frequency $\omega_\Phi$. The fluxes and moments stored in the database are expressed in the Laboratory frame. Their transformation to the rotating frame is documented below.
+
+\subsection{Fluxes} 
+The Laboratory frame fluxes are related to the rotating frame fluxes as follows:
+\begin{eqnarray}
+\Gamma_s^\textrm{L} &=& \Gamma_s^\textrm{co} \\
+\Pi_s^\textrm{L} &=& \Pi_s^\textrm{co} + \left< \int m_s\omega_\Phi\left(\frac{RB_t}{B}\right)^2 \textrm{Re}\left[f_s^\textrm{co}\right]\textrm{Re}\left[ \mathbf{v}_\chi\cdot \nabla r \right] \,\textrm{d}\mathbf{v}\right>\\
+Q_s^\textrm{L} &=& Q_s^\textrm{co} + \omega_\Phi \Pi_s^\textrm{co}
++ \left< \int \frac{1}{2}m_s(R\omega_\Phi)^2 \textrm{Re}\left[f_s^\textrm{co}\right]\textrm{Re}\left[ \mathbf{v}_\chi\cdot \nabla r \right]\,\textrm{d}\mathbf{v}\right> 
+%Q_s^\textrm{L} &=& Q_s^\textrm{co} + \left< \int m_sv_\parallel\omega_\Phi\frac{RB_t}{B} f_s \mathbf{v}_\chi\cdot \nabla r  \,\textrm{d}\mathbf{v}\right> 
+%+ \left< \int \frac{1}{2}m_s(R\omega_\Phi)^2 f_s  \mathbf{v}_\chi\cdot \nabla r \,\textrm{d}\mathbf{v}\right> 
+\end{eqnarray}
+with $\mathbf{v}_\chi=\mathbf{v}_\mathbf{E} + \mathbf{v}_{\mathbf{B}_\perp}+ \mathbf{v}_{\nabla B_\parallel}$ and all the expressions in the right hand sides evaluated in the rotating frame. 
+
+\subsection{Moments} 
+Similarly, the moments of the distribution function in the Laboratory frame can be expressed as a function of their counterpart in the rotating frame:
+\begin{align*}
+\delta n_s^\textrm{L} & = \delta n_s^\textrm{co} \\
+\delta v_{\parallel s}^\textrm{L} & = \delta v_{\parallel s}^\textrm{co} + s_bR\omega_\Phi\frac{|B_t|}{B}\delta n_s^\textrm{co} \\
+\delta T_{\perp s}^\textrm{L} & = \delta T_{\perp s}^\textrm{co} + m_s\left[R\omega_\Phi\frac{B_p}{B}\right]^2 \delta n_s^\textrm{co}\\
+\delta T_{\parallel s}^\textrm{L} & = \delta T_{\parallel s}^\textrm{co} + s_bm_s R\omega_\Phi\frac{|B_t|}{B} \delta v_{\parallel s}^\textrm{co} + m_s\left[R\omega_\Phi\frac{B_t}{B}\right]^2 \delta n_s^\textrm{co}
+\end{align*}
+
+\section{Computing the fluxes from the gyro-averaged moments}
+Most of the fluxes can be computed from the gyro-averaged moments stored in the database. This calculation is described below.
+
+\subsection{Relationship between guiding-center and gyro-center distribution functions} \label{sec:gctogy}
+The guiding center distribution function $f_s^{gc}$ is related to the gyro-center distribution function $f_s$ by:
+$$f_s^{gc} = f_s - \frac{F_{Ms}}{T_s}\left[ Z_s e [\phi - \left< \phi \right>_\textrm{gy}]+\mu\left< B_\parallel \right>_\textrm{gy}\right]$$
+where $F_{Ms}$ is the Maxwellian background of species $s$.\\
+
+\subsection{Polarisation and magnetisation effects}
+The fluxes computed in particle phase space (see Sec.~\ref{sec:fluxes}) can therefore be written as
+\begin{align*}
+\Gamma_s & = \Gamma_s^\textrm{gy} + \Gamma_s^\textrm{pol} + \Gamma_s^\textrm{mag} \\
+\Pi_s & = \Pi_s^\textrm{gy} + \Pi_s^\textrm{pol} + \Pi_s^\textrm{mag} \\
+Q_s & = Q_s^\textrm{gy} + Q_s^\textrm{pol} + Q_s^\textrm{mag}
+\end{align*}
+where the fluxes with the 'gy' superscript are computed with the gyro-center distribution function $f_s$ instead of the guiding center distribution function $f_s^\textrm{gc}$, and where the polarisation and magnetisation components are defined as: 
+\begin{align*}
+\Gamma_s^\textrm{pol} & = - \left< \frac{Z_s e}{T_s} \int F_{Ms} [ \phi - \left< \phi \right>_\textrm{gy} ]\mathbf{v}_\chi\cdot \nabla r  \,\textrm{d}\mathbf{v}\right>\\
+\Gamma_s^\textrm{mag} & = - \left< \frac{1}{T_s} \int \mu F_{Ms} \left< B_\parallel \right>_\textrm{gy} \mathbf{v}_\chi\cdot \nabla r  \,\textrm{d}\mathbf{v}\right> \\
+\Pi_s^\textrm{pol} & = - \left< s_bm_sR\frac{|B_t|}{B}\frac{Z_s e}{T_s} \int v_\parallel F_{Ms} [ \phi - \left< \phi \right>_\textrm{gy} ]\mathbf{v}_\chi\cdot \nabla r  \,\textrm{d}\mathbf{v}\right>\\
+\Pi_s^\textrm{mag} & = - \left< s_bm_sR\frac{|B_t|}{B}\frac{1}{T_s} \int \mu v_\parallel F_{Ms} \left< B_\parallel \right>_\textrm{gy} \mathbf{v}_\chi\cdot \nabla r  \,\textrm{d}\mathbf{v}\right>\\
+Q_s^\textrm{pol} & = - \left< \frac{1}{2}m_s\frac{Z_s e}{T_s} \int \mu v^2 F_{Ms} [ \phi - \left< \phi \right>_\textrm{gy} ]\mathbf{v}_\chi\cdot \nabla r  \,\textrm{d}\mathbf{v}\right>\\
+Q_s^\textrm{mag} & = - \left< \frac{1}{2}m_s\frac{1}{T_s} \int \mu v^2 F_{Ms} \left< B_\parallel \right>_\textrm{gy} \mathbf{v}_\chi\cdot \nabla r  \,\textrm{d}\mathbf{v}\right>
+\end{align*}
+Then use the following relationship and the spectral representation to simplify the expressions above:
+To be completed...
+ 
+\subsection{Fluxes and gyro-averaged moments}
+The next step is to rewrite the expressions of the gyro-center fluxes as a function of the gyro-averaged moments. 
+
+
+\subsection{Metric coefficients}
 
 
 \chapter{Entry submission procedure}
