@@ -28,7 +28,7 @@
 
 \author{Y. Camenen and the GKDB team}
 
-\date{Last update: October 3, 2018}
+\date{Last update: November 5, 2018}
 
 \maketitle
 
@@ -98,6 +98,7 @@ ids\_properties\_id & integer \\
 \hyperref[sec:runtype]{time\_interval\_norm} (NL) & array $2\times 1$ \\
 \hyperref[em:switches]{include\_a\_field\_parallel} &  boolean  \\
 \hyperref[em:switches]{include\_b\_field\_parallel} &  boolean  \\
+\hyperref[em:switches]{inconsistent\_curvature\_drift} &  boolean  \\
 \hyperref[sec:rotswitches]{include\_centrifugal\_effects} &  boolean  \\
 \hyperref[sec:colswitches]{collisions\_pitch\_only}  &  boolean  \\
 \hyperref[sec:colswitches]{collisions\_momentum\_conservation} &  boolean  \\
@@ -169,7 +170,7 @@ wavevector\_id & integer \\
 \hyperref[sec:eigenmode:apar]{a\_field\_parallel\_perturbed\_norm\_imaginary} & array $N_{\theta}\times 1$ \\
 \hyperref[sec:eigenmode:bpar]{b\_field\_parallel\_perturbed\_norm\_real} & array $N_{\theta}\times 1$ \\
 \hyperref[sec:eigenmode:bpar]{b\_field\_parallel\_perturbed\_norm\_imaginary} & array $N_{\theta}\times 1$ \\
-\hyperref[sec:polgrid]{poloidal\_angle\_grid} & array $N_{\theta}\times 1$ \\
+\hyperref[sec:polgrid]{poloidal\_angle} & array $N_{\theta}\times 1$ \\
 \hyperref[sec:fields:weight]{phi\_potential\_perturbed\_weight} & real \\
 \hyperref[sec:fields:parity]{phi\_potential\_perturbed\_parity} & real \\
 \hyperref[sec:fields:weight]{a\_field\_parallel\_perturbed\_weight} & real \\
@@ -207,40 +208,43 @@ species2\_id & integer \\
 \end{tabularx}\\ 		
 };
 \node[draw,anchor=north west] (total_fluxes_norm) at (1,-13) {
-\begin{tabularx}{0.45\textwidth}{|X|M{1.2cm}|}
+\begin{tabularx}{0.51\textwidth}{|X|M{1.2cm}|}
 \hline
-\multicolumn{2}{|c|}{\textbf{total\_fluxes\_norm (NL)}} \\
+\multicolumn{2}{|c|}{\textbf{fluxes\_integrated\_norm (NL)}} \\
 \hline
 species\_id & integer \\
 ids\_properties\_id & integer \\
-\hyperref[sec:fluxes]{particle\_flux\_phi\_potential} & real \\
-\hyperref[sec:fluxes]{particle\_flux\_a\_field\_parallel} & real \\
-\hyperref[sec:fluxes]{particle\_flux\_b\_field\_parallel} & real \\
-\hyperref[sec:fluxes]{momentum\_flux\_phi\_potential} & real \\
-\hyperref[sec:fluxes]{momentum\_flux\_a\_field\_parallel} & real \\
-\hyperref[sec:fluxes]{momentum\_flux\_b\_field\_parallel} & real \\
-\hyperref[sec:fluxes]{energy\_flux\_phi\_potential} & real \\
-\hyperref[sec:fluxes]{energy\_flux\_a\_field\_parallel} & real \\
-\hyperref[sec:fluxes]{energy\_flux\_b\_field\_parallel} & real \\
+\hyperref[sec:fluxes]{particles\_phi\_potential} & real \\
+\hyperref[sec:fluxes]{particles\_a\_field\_parallel} & real \\
+\hyperref[sec:fluxes]{particles\_b\_field\_parallel} & real \\
+\hyperref[sec:fluxes]{momentum\_tor\_parallel\_phi\_potential} & real \\
+\hyperref[sec:fluxes]{momentum\_tor\_parallel\_a\_field\_parallel} & real \\
+\hyperref[sec:fluxes]{momentum\_tor\_parallel\_b\_field\_parallel} & real \\
+\hyperref[sec:fluxes]{energy\_phi\_potential} & real \\
+\hyperref[sec:fluxes]{energy\_a\_field\_parallel} & real \\
+\hyperref[sec:fluxes]{energy\_b\_field\_parallel} & real \\
 \hline
 \end{tabularx}\\ 				
 };
 \node[draw,anchor=north west] (fluxes_norm) at (4,-7) {
-	\begin{tabularx}{0.45\textwidth}{|X|M{1.2cm}|}
+	\begin{tabularx}{0.51\textwidth}{|X|M{1.2cm}|}
 	\hline
 	\multicolumn{2}{|c|}{\textbf{fluxes\_norm}} \\
 	\hline
 	species\_id & integer \\
 	eigenmode\_id & integer \\
-	\hyperref[sec:fluxes]{particle\_flux\_phi\_potential} & real \\
-	\hyperref[sec:fluxes]{particle\_flux\_a\_field\_parallel} & real \\
-	\hyperref[sec:fluxes]{particle\_flux\_b\_field\_parallel} & real \\
-	\hyperref[sec:fluxes]{momentum\_flux\_phi\_potential} & real \\
-	\hyperref[sec:fluxes]{momentum\_flux\_a\_field\_parallel} & real \\
-	\hyperref[sec:fluxes]{momentum\_flux\_b\_field\_parallel} & real \\
-	\hyperref[sec:fluxes]{energy\_flux\_phi\_potential} & real \\
-	\hyperref[sec:fluxes]{energy\_flux\_a\_field\_parallel} & real \\
-	\hyperref[sec:fluxes]{energy\_flux\_b\_field\_parallel} & real \\
+	\hyperref[sec:fluxes]{particles\_phi\_potential} & real \\
+	\hyperref[sec:fluxes]{particles\_a\_field\_parallel} & real \\
+	\hyperref[sec:fluxes]{particles\_b\_field\_parallel} & real \\
+	\hyperref[sec:fluxes]{momentum\_tor\_parallel\_phi\_potential} & real \\
+	\hyperref[sec:fluxes]{momentum\_tor\_parallel\_a\_field\_parallel} & real \\
+	\hyperref[sec:fluxes]{momentum\_tor\_parallel\_b\_field\_parallel} & real \\
+%	\hyperref[sec:fluxes]{momentum\_tor\_perpendicular\_phi\_potential} & real \\
+%    \hyperref[sec:fluxes]{momentum\_tor\_perpendicular\_a\_field\_parallel} & real \\
+ %   \hyperref[sec:fluxes]{momentum\_tor\_perpendicular\_b\_field\_parallel} & real \\
+	\hyperref[sec:fluxes]{energy\_phi\_potential} & real \\
+	\hyperref[sec:fluxes]{energy\_a\_field\_parallel} & real \\
+	\hyperref[sec:fluxes]{energy\_b\_field\_parallel} & real \\
 	\hline
 	\end{tabularx}\\ 			
 };
@@ -280,7 +284,7 @@ ids\_properties\_id & integer \\
 \draw[->,>=latex,thick] (species) -| ([xshift=5mm]ids.south west);
 \draw[->,>=latex,thick] ([yshift=-12mm]eigenmode.north west) -- (wavevector.east);
 \draw[->,>=latex,thick] (total_fluxes_norm) -| ([xshift=5mm]ids.south west);
-\draw[->,>=latex,thick] ([xshift=-25mm]total_fluxes_norm.north) -- ([xshift=-25mm]species.south);
+\draw[->,>=latex,thick] ([xshift=-30mm]total_fluxes_norm.north) -- ([xshift=-25mm]species.south);
 \draw[->,>=latex,thick] (fluxes_norm) -| ([xshift=-25mm]species.south);
 \draw[->,>=latex,thick] ([yshift=30mm]fluxes_norm) -| ([xshift=-25mm]eigenmode.south east);
 \draw[->,>=latex,thick] ([xshift=-25mm]moments_norm_rotating_frame.north east) -- ([xshift=-25mm]eigenmode.south east);
@@ -356,8 +360,8 @@ However, if the choice of reference quantities is left arbitrary, the same physi
 \subsection{Fundamental reference quantities}
 The six fundamental reference quantities are:
 \begin{itemize}
-\item $q_\tref=e=1.6022\times10^{-19}\U{C}$, the positive elementary charge
-\item $m_\tref=m_D=3.3445\times10^{-27}\U{kg}$, the Deuterium mass
+\item $q_\tref=e=1.602176634\times10^{-19}\U{C}$, the positive elementary charge
+\item $m_\tref=m_D=3.343583719\times10^{-27}\U{kg}$, the Deuterium mass
 \item $T_\tref=T_e(r_0,\theta=0)$, the electron temperature at $\theta=0$
 \item $n_\tref=n_e(r_0,\theta=0)$, the electron density at $\theta=0$
 \item $L_\tref=R_0$, the reference length
@@ -452,7 +456,9 @@ $$\texttt{pressure\_gradient\_norm}=p'_N = -\frac{2\mu_0 L_\tref}{B_\tref^2 }\fr
 with $p$ the total plasma pressure (i.e. the pressure term entering the Grad-Shafranov equation). $p'_N$ (often called $\beta'$) is a quantity related to the magnetic equilibrium and does not need to be consistent with the gradients ($L_\tref/L_{n_s}$, $L_\tref/L_{T_s}$) specified for the kinetic species.\\
 Note that the low $\beta'$ approximation for the curvature drift, i.e. the approximation
 $$\mathbf{b}\times(\mathbf{b}\cdot\nabla\mathbf{b})=\frac{1}{2}\mathbf{b}\times\nabla r\frac{2\mu_0}{B^2}\frac{\partial p}{\partial r} + \frac{\mathbf{B}\times\nabla B}{B^2} \sim  \frac{\mathbf{B}\times\nabla B}{B^2}, $$
-is not allowed in the database as it is inconsistent with the use of a finite pressure gradient ($p'_N$) for the equilibrium description. 
+is inconsistent with the use of a finite pressure gradient ($p'_N$) for the equilibrium description. 
+The low $\beta'$ approximation is nevertheless sometimes used in combination with the neglect of $B_\parallel$ fluctuations to take advantage of a cancellation at the MHD level \cite{Waltz:PoP1999}.
+This behaviour is controlled with the switch \texttt{inconsistent\_curvature\_drift} of the \texttt{model} table described in Sec.~\ref{em:switches}.
 
 
 \subsection{Plasma shape} \label{sec:shape:coefficients}
@@ -530,6 +536,9 @@ In addition, specific collisionality switches are described in Sec.~\ref{sec:col
 	$$\texttt{include\_a\_field\_parallel}= \textrm{true / false}$$ 
 	\item Are the fluctuations of the perpendicular electromagnetic vector potential retained (magnetic field compression)?
 	$$\texttt{include\_b\_field\_parallel}= \textrm{true / false}$$ 
+	\item Is the $p'_N$ contribution to the curvature drift neglected? 
+	$$\texttt{inconsistent\_curvature\_drift}= \textrm{true / false}$$
+	Note that $\texttt{inconsistent\_curvature\_drift}= \texttt{true}$ is only allowed with $\texttt{include\_b\_field\_parallel}= \texttt{false}$, see Sec.~\ref{sec:pressure:gradient}.
 \end{itemize}
 \subsection{Rotation} \label{sec:rotswitches}
 \begin{itemize}
@@ -579,7 +588,7 @@ Different entries can be grouped together by giving them a common tag. This can 
    \item For \textit{eigenvalue} runs, there can be several eigenmodes per wavevector
   \end{itemize}	  
  \item For \textit{non-linear} runs, the fluxes, parallel mode structure and moments outputs are time averaged over the interval $\texttt{time\_interval\_norm}$ specified in the $\texttt{model}$ table.\\ 
- The \texttt{total\_fluxes\_norm} table, containing the fluxes summed over $k_x$ and $k_y$, is only filled for non-linear runs.
+ The \texttt{fluxes\_integrated\_norm} table, containing the fluxes summed over $k_x$ and $k_y$, is only filled for non-linear runs.
 \end{itemize}
 
 \section{Mode amplitude}
@@ -620,7 +629,7 @@ The tolerance on the growth rate still needs to be defined in a code independent
 For each species, the flux-surface averaged contravariant radial component of the particle flux, energy flux and toroidal angular momentum flux, computed in particle phase space, are given by:
 \begin{eqnarray}
  \Gamma_s &=& \left<\int \textrm{Re}\left[f_s^{gc}\right] \textrm{Re}\left[\mathbf{v}_\mathbf{E} + \mathbf{v}_{\mathbf{B}_\perp} + \mathbf{v}_{\nabla B_\parallel}  \right]\cdot \nabla r\,\textrm{d}\mathbf{v}\right> \\
-  \Pi_s   &=& \left<\int s_b m_s R \frac{|B_t|}{B}v_\parallel \textrm{Re}\left[f_s^{gc}\right] \textrm{Re}  \left[\mathbf{v}_\mathbf{E} + \mathbf{v}_{\mathbf{B}_\perp} + \mathbf{v}_{\nabla B_\parallel}  \right] \cdot \nabla r\,\textrm{d}\mathbf{v}\right> \\
+  \Pi^\parallel_s   &=& \left<\int s_b m_s R \frac{|B_t|}{B}v_\parallel \textrm{Re}\left[f_s^{gc}\right] \textrm{Re}  \left[\mathbf{v}_\mathbf{E} + \mathbf{v}_{\mathbf{B}_\perp} + \mathbf{v}_{\nabla B_\parallel}  \right] \cdot \nabla r\,\textrm{d}\mathbf{v}\right> \\
       Q_s &=& \left<\int \frac{1}{2}m_sv^2 \textrm{Re}\left[f_s^{gc}\right] \textrm{Re} \left[\mathbf{v}_\mathbf{E} + \mathbf{v}_{\mathbf{B}_\perp} + \mathbf{v}_{\nabla B_\parallel}  \right] \cdot \nabla r\,\textrm{d}\mathbf{v}\right> 
 \end{eqnarray}
 where $f_s^{gc}$ is the guiding center perturbed distribution function of species $s$ (see Sec.~\ref{sec:gctogy} for the relationship with the gyro-center distribution function $f_s$). The three terms in the square brackets are the electrostatic, magnetic flutter and magnetic compression drifts:
@@ -642,7 +651,7 @@ where $A$ and $B$ stand for any of the fluctuating fields, the fluxes can be exp
 \begin{align*}
 \Gamma_s & = \sum_{k_x,ky} \Gamma_s(k_x,k_y) = \sum_{k_x,k_y>0}  \left<k_y\mathcal{E}^{ry} \,\textrm{Im}\left[ \int J_0(k_\perp\rho_s)\hat{f}_s^{gc}\left[\hat{\phi}^\dagger-v_\parallel \hat{A}_\parallel^\dagger + \frac{\mu}{Z_s e}\hat{B}_\parallel^\dagger\right] 
  \,\textrm{d}\mathbf{v^*}\right]\right>\\
-\Pi_s & = \sum_{k_x,ky} \Pi_s(k_x,k_y) =  \sum_{k_x,k_y>0}  \left<k_y\mathcal{E}^{ry} \,\textrm{Im}\left[ \int s_bm_sR\frac{|B_t|}{B}v_\parallel J_0(k_\perp\rho_s)\hat{f}_s^{gc}\left[\hat{\phi}^\dagger-v_\parallel \hat{A}_\parallel^\dagger + \frac{\mu}{Z_s e}\hat{B}_\parallel^\dagger\right] 
+\Pi^\parallel_s & = \sum_{k_x,ky} \Pi_s(k_x,k_y) =  \sum_{k_x,k_y>0}  \left<k_y\mathcal{E}^{ry} \,\textrm{Im}\left[ \int s_bm_sR\frac{|B_t|}{B}v_\parallel J_0(k_\perp\rho_s)\hat{f}_s^{gc}\left[\hat{\phi}^\dagger-v_\parallel \hat{A}_\parallel^\dagger + \frac{\mu}{Z_s e}\hat{B}_\parallel^\dagger\right] 
 \,\textrm{d}\mathbf{v^*}\right]\right> \\
 Q_s & = \sum_{k_x,ky} \Gamma_s(k_x,k_y) = \sum_{k_x,k_y>0}  \left<k_y\mathcal{E}^{ry} \,\textrm{Im}\left[\int \frac{1}{2}m_sv^2 J_0(k_\perp\rho_s)\hat{f}_s^{gc}\left[\hat{\phi}^\dagger-v_\parallel \hat{A}_\parallel^\dagger + \frac{\mu}{Z_s e}\hat{B}_\parallel^\dagger\right] 
 \,\textrm{d}\mathbf{v^*}\right]\right>
@@ -657,35 +666,35 @@ The integral over the gyro-angle has been performed analytically, resulting in t
 The fluxes are then given for each Fourier mode, normalised to the corresponding mode amplitude (taken to be 1 for non-linear runs) and made dimensionless as follows:
 \begin{eqnarray}
  \Gamma_{sN}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{\Gamma_s(k_x,k_y)}{n_s \vthref \rho_*^2}\\
- \Pi_{sN}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{\Pi_s(k_x,k_y)}{n_s m_\tref L_\tref \vthref^2 \rho_*^2}\\
+ \Pi_{sN}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{\Pi^\parallel_s(k_x,k_y)}{n_s m_\tref L_\tref \vthref^2 \rho_*^2}\\
  Q_{sN}(k_x,k_y) &=& \frac{1}{A_f^2}\frac{Q_s(k_x,k_y)}{n_s T_\tref \vthref \rho_*^2}
 \end{eqnarray}
 The electrostatic, magnetic flutter and magnetic compression contributions are stored separately (e.g. $\Gamma_{sN}=\Gamma_{sN,\phi}+\Gamma_{sN,A_\parallel}+\Gamma_{sN,B_\parallel}$) for each flux. The fluxes are normalised with respect to $n_s(\theta=0)$ rather than $n_\tref$ to allow for trace species with zero density.
 \begin{align*}
- \texttt{particle\_flux\_phi\_potential} &= \Gamma_{sN,\phi} \\
- \texttt{particle\_flux\_a\_field\_parallel} &= \Gamma_{sN,A_\parallel} \\
- \texttt{particle\_flux\_b\_field\_parallel} &= \Gamma_{sN,B_\parallel} \\
- \texttt{momentum\_flux\_phi\_potential} &= \Pi_{sN,\phi} \\
- \texttt{momentum\_flux\_a\_field\_parallel} &= \Pi_{sN,A_\parallel} \\
- \texttt{momentum\_flux\_b\_field\_parallel} &= \Pi_{sN,B_\parallel} \\
- \texttt{energy\_flux\_phi\_potential} &= Q_{sN,\phi} \\
- \texttt{energy\_flux\_a\_field\_parallel} &= Q_{sN,A_\parallel} \\
- \texttt{energy\_flux\_b\_field\_parallel} &= Q_{sN,B_\parallel}
+ \texttt{particles\_phi\_potential} &= \Gamma_{sN,\phi} \\
+ \texttt{particles\_a\_field\_parallel} &= \Gamma_{sN,A_\parallel} \\
+ \texttt{particles\_b\_field\_parallel} &= \Gamma_{sN,B_\parallel} \\
+ \texttt{momentum\_tor\_parallel\_phi\_potential} &= \Pi^\parallel_{sN,\phi} \\
+ \texttt{momentum\_tor\_parallel\_a\_field\_parallel} &= \Pi^\parallel_{sN,A_\parallel} \\
+ \texttt{momentum\_tor\_parallel\_b\_field\_parallel} &= \Pi^\parallel_{sN,B_\parallel} \\
+ \texttt{energy\_phi\_potential} &= Q_{sN,\phi} \\
+ \texttt{energy\_a\_field\_parallel} &= Q_{sN,A_\parallel} \\
+ \texttt{energy\_b\_field\_parallel} &= Q_{sN,B_\parallel}
 \end{align*}
 
 \subsection{Total fluxes (non-linear runs only)}
 For non-linear runs, the total fluxes,  defined as the sum of the fluxes over all the wavevectors, are also stored in the database:
 \begin{eqnarray}
 \Gamma_{sN}^\textrm{tot} &=& \sum_{k_x, k_y>0} 2\Gamma_{sN}(k_x,k_y)\\
-\Pi_{sN}^\textrm{tot} &=&  \sum_{k_x, k_y>0} 2\Pi_{sN}(k_x,k_y)\\
+\Pi_{sN}^\textrm{tot} &=&  \sum_{k_x, k_y>0} 2\Pi^\parallel_{sN}(k_x,k_y)\\
 Q_{sN}^\textrm{tot} &=&  \sum_{k_x, k_y>0} 2Q_{sN}(k_x,k_y) 
 \end{eqnarray}
-The total fluxes have the same names as the fluxes per wavevector but are stored in the table \texttt{total\_fluxes\_norm}.
+The total fluxes have the same names as the fluxes per wavevector but are stored in the table \texttt{fluxes\_integrated\_norm}.
 
 \section{Parallel mode structure}
 \subsection{Parallel grid} \label{sec:polgrid}
 The variation of the mode amplitude and phase in the parallel direction is given as a function of the poloidal angle $\theta$ defined previously. Note that the poloidal angle grid does not need to be uniform but has to be increasing.
-$$\texttt{poloidal\_angle\_grid}=\theta$$ 
+$$\texttt{poloidal\_angle}=\theta$$ 
 
 \subsection{Perturbed electrostatic potential} \label{sec:eigenmode:phi}
 $$\phi_{Nf}(\theta) = \frac{\hat{\phi}_N(k_x,k_y,\theta)}{A_f(k_x,k_y)}\textrm{e}^{i\alpha}$$
@@ -775,8 +784,8 @@ To describe inertial effects associated with the background rotation, several gy
 The Laboratory frame fluxes are related to the rotating frame fluxes as follows:
 \begin{eqnarray}
 \Gamma_s^\textrm{L} &=& \Gamma_s^\textrm{co} \\
-\Pi_s^\textrm{L} &=& \Pi_s^\textrm{co} + \left< \int m_s\omega_\Phi\left(\frac{RB_t}{B}\right)^2 \textrm{Re}\left[f_s^\textrm{co}\right]\textrm{Re}\left[ \mathbf{v}_\chi\cdot \nabla r \right] \,\textrm{d}\mathbf{v}\right>\\
-Q_s^\textrm{L} &=& Q_s^\textrm{co} + \omega_\Phi \Pi_s^\textrm{co}
+\Pi_s^{\parallel \textrm{L}} &=& \Pi_s^{\parallel \textrm{L}} + \left< \int m_s\omega_\Phi\left(\frac{RB_t}{B}\right)^2 \textrm{Re}\left[f_s^\textrm{co}\right]\textrm{Re}\left[ \mathbf{v}_\chi\cdot \nabla r \right] \,\textrm{d}\mathbf{v}\right>\\
+Q_s^\textrm{L} &=& Q_s^\textrm{co} + \omega_\Phi \Pi_s^{\parallel \textrm{L}}
 + \left< \int \frac{1}{2}m_s(R\omega_\Phi)^2 \textrm{Re}\left[f_s^\textrm{co}\right]\textrm{Re}\left[ \mathbf{v}_\chi\cdot \nabla r \right]\,\textrm{d}\mathbf{v}\right> 
 %Q_s^\textrm{L} &=& Q_s^\textrm{co} + \left< \int m_sv_\parallel\omega_\Phi\frac{RB_t}{B} f_s \mathbf{v}_\chi\cdot \nabla r  \,\textrm{d}\mathbf{v}\right> 
 %+ \left< \int \frac{1}{2}m_s(R\omega_\Phi)^2 f_s  \mathbf{v}_\chi\cdot \nabla r \,\textrm{d}\mathbf{v}\right> 
@@ -804,15 +813,15 @@ where $F_{Ms}$ is the Maxwellian background of species $s$.\\
 The fluxes computed in particle phase space (see Sec.~\ref{sec:fluxes}) can therefore be written as
 \begin{align*}
 \Gamma_s & = \Gamma_s^\textrm{gy} + \Gamma_s^\textrm{pol} + \Gamma_s^\textrm{mag} \\
-\Pi_s & = \Pi_s^\textrm{gy} + \Pi_s^\textrm{pol} + \Pi_s^\textrm{mag} \\
+\Pi^\parallel_s & = \Pi_s^{\parallel \textrm{gy}} + \Pi_s^{\parallel \textrm{pol}} + \Pi_s^{\parallel \textrm{mag}} \\
 Q_s & = Q_s^\textrm{gy} + Q_s^\textrm{pol} + Q_s^\textrm{mag}
 \end{align*}
 where the fluxes with the 'gy' superscript are computed with the gyro-center distribution function $f_s$ instead of the guiding center distribution function $f_s^\textrm{gc}$, and where the polarisation and magnetisation components are defined as: 
 \begin{align*}
 \Gamma_s^\textrm{pol}(k_x,k_y) & = - \left<k_y\mathcal{E}^{ry} \textrm{Im}\left[\int J_0(1-J_0)F_{Ms}\frac{Z_s e}{T_s}\hat{\phi}\left[-v_\parallel \hat{A}_\parallel^\dagger + \frac{\mu}{Z_s e}\hat{B}_\parallel^\dagger \right]  \,\textrm{d}\mathbf{v^*} \right]\right>\\
 \Gamma_s^\textrm{mag}(k_x,k_y) & = - \left<k_y\mathcal{E}^{ry} \textrm{Im}\left[\int \mu J_0^2F_{Ms}\frac{1}{T_s}\hat{B}_\parallel\left[\hat{\phi}^\dagger-v_\parallel \hat{A}_\parallel^\dagger \right]  \,\textrm{d}\mathbf{v^*} \right]\right>\\
-\Pi_s^\textrm{pol}(k_x,k_y) & = - \left<k_y\mathcal{E}^{ry} \textrm{Im}\left[\int s_bm_sR\frac{|B_t|}{B}v_\parallel J_0(1-J_0)F_{Ms}\frac{Z_s e}{T_s}\hat{\phi}\left[-v_\parallel \hat{A}_\parallel^\dagger + \frac{\mu}{Z_s e}\hat{B}_\parallel^\dagger \right]  \,\textrm{d}\mathbf{v^*} \right]\right>\\
-\Pi_s^\textrm{mag}(k_x,k_y) & = - \left<k_y\mathcal{E}^{ry} \textrm{Im}\left[\int s_bm_sR\frac{|B_t|}{B}v_\parallel\mu J_0^2F_{Ms}\frac{1}{T_s}\hat{B}_\parallel\left[\hat{\phi}^\dagger-v_\parallel \hat{A}_\parallel^\dagger \right]  \,\textrm{d}\mathbf{v^*} \right]\right>\\
+\Pi_s^{\parallel \textrm{pol}}(k_x,k_y) & = - \left<k_y\mathcal{E}^{ry} \textrm{Im}\left[\int s_bm_sR\frac{|B_t|}{B}v_\parallel J_0(1-J_0)F_{Ms}\frac{Z_s e}{T_s}\hat{\phi}\left[-v_\parallel \hat{A}_\parallel^\dagger + \frac{\mu}{Z_s e}\hat{B}_\parallel^\dagger \right]  \,\textrm{d}\mathbf{v^*} \right]\right>\\
+\Pi_s^{\parallel \textrm{mag}}(k_x,k_y) & = - \left<k_y\mathcal{E}^{ry} \textrm{Im}\left[\int s_bm_sR\frac{|B_t|}{B}v_\parallel\mu J_0^2F_{Ms}\frac{1}{T_s}\hat{B}_\parallel\left[\hat{\phi}^\dagger-v_\parallel \hat{A}_\parallel^\dagger \right]  \,\textrm{d}\mathbf{v^*} \right]\right>\\
 Q_s^\textrm{pol}(k_x,k_y) & = - \left<k_y\mathcal{E}^{ry} \textrm{Im}\left[\int  \frac{1}{2}m_sv^2J_0(1-J_0)F_{Ms}\frac{Z_s e}{T_s}\hat{\phi}\left[-v_\parallel \hat{A}_\parallel^\dagger + \frac{\mu}{Z_s e}\hat{B}_\parallel^\dagger \right]  \,\textrm{d}\mathbf{v^*} \right]\right>\\
 Q_s^\textrm{mag}(k_x,k_y) & = - \left<k_y\mathcal{E}^{ry} \textrm{Im}\left[\int  \frac{1}{2}m_sv^2\mu J_0^2F_{Ms}\frac{1}{T_s}\hat{B}_\parallel\left[\hat{\phi}^\dagger-v_\parallel \hat{A}_\parallel^\dagger \right]  \,\textrm{d}\mathbf{v^*} \right]\right>
 \end{align*}
@@ -822,7 +831,7 @@ Q_s^\textrm{mag}(k_x,k_y) & = - \left<k_y\mathcal{E}^{ry} \textrm{Im}\left[\int 
 The next step is to express the fluxes of gyro-centers as a function of the gyro-averaged moments stored in the database:
 \begin{align*}
 \Gamma_s^{gy}(k_x,k_y) &= \left<k_y\mathcal{E}^{ry} \left[ \textrm{Im}\left[ \delta n_s^{J_0} \hat{\phi}^\dagger \right] - \textrm{Im}\left[ \delta v_{\parallel s}^{J_0} \hat{A}_\parallel^\dagger \right] + \frac{2}{Z_s e B} \textrm{Im}\left[ \delta T_{\perp s}^{J_0} \hat{B}_\parallel^\dagger \right] \right]\right> \\ 
-\Pi_s^{gy}(k_x,k_y) &= \left<k_y\mathcal{E}^{ry} s_bm_sR\frac{|B_t|}{B}\left[ \textrm{Im}\left[ \delta v_{\parallel s}^{J_0} \hat{\phi}^\dagger \right] - \frac{2}{m_s}\textrm{Im}\left[ \delta T_{\parallel s}^{J_0} \hat{A}_\parallel^\dagger \right] + \frac{m_s}{Z_s e B} \textrm{Im}\left[ \delta m_s^{J_0}(v_\parallel v_\perp^2) \hat{B}_\parallel^\dagger \right] \right]\right> \\
+\Pi_s^{\parallel \textrm{gy}}(k_x,k_y) &= \left<k_y\mathcal{E}^{ry} s_bm_sR\frac{|B_t|}{B}\left[ \textrm{Im}\left[ \delta v_{\parallel s}^{J_0} \hat{\phi}^\dagger \right] - \frac{2}{m_s}\textrm{Im}\left[ \delta T_{\parallel s}^{J_0} \hat{A}_\parallel^\dagger \right] + \frac{m_s}{Z_s e B} \textrm{Im}\left[ \delta m_s^{J_0}(v_\parallel v_\perp^2) \hat{B}_\parallel^\dagger \right] \right]\right> \\
 Q_s^{gy}(k_x,k_y) &= \left<k_y\mathcal{E}^{ry} \left[ \textrm{Im}\left[ (\delta T_{\parallel s}^{J_0}+ \delta T_{\perp s}^{J_0} )  \hat{\phi}^\dagger \right] - \textrm{Im}\left[ \delta m_s^{J_0}(\frac{1}{2}m_sv_\parallel v^2) \hat{A}_\parallel^\dagger \right] + \frac{m_s}{Z_s e B} \textrm{Im}\left[ \delta m_s^{J_0}(\frac{1}{2}m_sv_\perp^2 v^2) \hat{B}_\parallel^\dagger \right] \right]\right> \end{align*}
 where the
 $$\delta m_s^{J_0}(x) = \int x J_0(k_\perp \rho_s)\hat{f}_s(\theta,k_x,k_y) \,\textrm{d}\mathbf{v^*}$$
@@ -851,15 +860,14 @@ Explain that the entries are submitted to the db with a json file and point at t
  \sum_s Z_{sN}n_{sN} = 0 \qquad \qquad \sum_s Z_{sN}\frac{n_{sN}}{L_{n_s}}=0
 \end{equation}
 \item If at least one species has its Mach number $M_s=u_N\sqrt{m_{sN}/T_{sN}}>0.2$, centrifugal effects must be included
-\item If $\beta_{eN}>0$, magnetic flutter has to be included: include\_a\_parallel=1
-\item If $\beta_{eN}>0.5\%$, magnetic compression has to be included: include\_b\_field\_parallel=1
+\item If $\beta_{eN}>0$, magnetic flutter has to be included: $\texttt{include\_a\_field\_parallel}=\texttt{true}$
+\item If $\beta_{eN}>0.5\%$, magnetic compression has to be included: $\texttt{include\_b\_field\_parallel}=\texttt{true}$ unless the $\beta'$ contribution to the curvature drift is neglected, i.e. $\texttt{inconsistent\_curvature\_drift}= \texttt{true}$, see Sec.~\ref{sec:pressure:gradient}.
 \item The tolerance on the mode growth rate can not be more than $10\%$.
 \item For initial value runs, $N_\textrm{modes}=1$.
 \item The poloidal angle array must range from $-N_p \pi$ to $N_p \pi$, with $N_p$ the number of poloidal turns.
 \item The arrays containing the parallel structure of the fields are of size $N_\textrm{pol grid}\times N_\textrm{modes}$ with $N_\textrm{pol grid}$ the length of the poloidal angle array.
 \item The fields have been rotated in the complex plane so that $\textrm{Im}\left[\phi_{Nf}(\theta=0)\right]=0$. Note that the $\phi_{Nf}$ array does not necessarily have a point at $\theta=0$. In that case, the condition above is checked by interpolating $\phi_{Nf}$ at $\theta=0$.
 \item The array containing the fluxes are of size $N_\textrm{species}\times N_\textrm{modes}$, i.e. one flux value is given per species and per mode (there may be several mode per wavevector when an eigenvalue solver is used).
-\item Laboratory frame AND rotating frame fluxes are given in input.
 \end{itemize}
 
 \subsection{Mandatory fields}
