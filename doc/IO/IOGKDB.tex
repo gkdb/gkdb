@@ -42,6 +42,7 @@ The normalised inputs and outputs are independent of $\rho_*$ consistently with 
 S.I. units are used everywhere with the exception of temperatures given in eV. This means that $kT$ is noted $T$ as is customary in plasma physics.
 
 \chapter{Database structure}
+\newpage
 \resizebox{\textwidth}{!}{%
 \begin{tikzpicture}
 \node[draw,anchor=north west] (ids) at (0,10) {
@@ -207,8 +208,8 @@ species2\_id & integer \\
 \hline
 \end{tabularx}\\ 		
 };
-\node[draw,anchor=north west] (total_fluxes_norm) at (1,-13) {
-\begin{tabularx}{0.51\textwidth}{|X|M{1.2cm}|}
+\node[draw,anchor=north west] (total_fluxes_norm) at (1,-15) {
+\begin{tabularx}{0.57\textwidth}{|X|M{1.2cm}|}
 \hline
 \multicolumn{2}{|c|}{\textbf{fluxes\_integrated\_norm (NL)}} \\
 \hline
@@ -220,14 +221,17 @@ ids\_properties\_id & integer \\
 \hyperref[sec:fluxes]{momentum\_tor\_parallel\_phi\_potential} & real \\
 \hyperref[sec:fluxes]{momentum\_tor\_parallel\_a\_field\_parallel} & real \\
 \hyperref[sec:fluxes]{momentum\_tor\_parallel\_b\_field\_parallel} & real \\
+\hyperref[sec:fluxes]{momentum\_tor\_perpendicular\_phi\_potential} & real \\
+\hyperref[sec:fluxes]{momentum\_tor\_perpendicular\_a\_field\_parallel} & real \\
+\hyperref[sec:fluxes]{momentum\_tor\_perpendicular\_b\_field\_parallel} & real \\
 \hyperref[sec:fluxes]{energy\_phi\_potential} & real \\
 \hyperref[sec:fluxes]{energy\_a\_field\_parallel} & real \\
 \hyperref[sec:fluxes]{energy\_b\_field\_parallel} & real \\
 \hline
 \end{tabularx}\\ 				
 };
-\node[draw,anchor=north west] (fluxes_norm) at (4,-7) {
-	\begin{tabularx}{0.51\textwidth}{|X|M{1.2cm}|}
+\node[draw,anchor=north west] (fluxes_norm) at (4,-7.2) {
+	\begin{tabularx}{0.57\textwidth}{|X|M{1.2cm}|}
 	\hline
 	\multicolumn{2}{|c|}{\textbf{fluxes\_norm}} \\
 	\hline
@@ -239,16 +243,16 @@ ids\_properties\_id & integer \\
 	\hyperref[sec:fluxes]{momentum\_tor\_parallel\_phi\_potential} & real \\
 	\hyperref[sec:fluxes]{momentum\_tor\_parallel\_a\_field\_parallel} & real \\
 	\hyperref[sec:fluxes]{momentum\_tor\_parallel\_b\_field\_parallel} & real \\
-%	\hyperref[sec:fluxes]{momentum\_tor\_perpendicular\_phi\_potential} & real \\
-%    \hyperref[sec:fluxes]{momentum\_tor\_perpendicular\_a\_field\_parallel} & real \\
- %   \hyperref[sec:fluxes]{momentum\_tor\_perpendicular\_b\_field\_parallel} & real \\
+	\hyperref[sec:fluxes]{momentum\_tor\_perpendicular\_phi\_potential} & real \\
+    \hyperref[sec:fluxes]{momentum\_tor\_perpendicular\_a\_field\_parallel} & real \\
+    \hyperref[sec:fluxes]{momentum\_tor\_perpendicular\_b\_field\_parallel} & real \\
 	\hyperref[sec:fluxes]{energy\_phi\_potential} & real \\
 	\hyperref[sec:fluxes]{energy\_a\_field\_parallel} & real \\
 	\hyperref[sec:fluxes]{energy\_b\_field\_parallel} & real \\
 	\hline
 	\end{tabularx}\\ 			
 };
-\node[draw,anchor=north east] (moments_norm_rotating_frame) at (25,-10) {
+\node[draw,anchor=north east] (moments_norm_rotating_frame) at (25,-11.7) {
 	\begin{tabularx}{0.68\textwidth}{|X|M{2cm}|}
 	\hline
 	\multicolumn{2}{|c|}{\textbf{moments\_norm\_rotating\_frame}} \\
@@ -284,7 +288,7 @@ ids\_properties\_id & integer \\
 \draw[->,>=latex,thick] (species) -| ([xshift=5mm]ids.south west);
 \draw[->,>=latex,thick] ([yshift=-12mm]eigenmode.north west) -- (wavevector.east);
 \draw[->,>=latex,thick] (total_fluxes_norm) -| ([xshift=5mm]ids.south west);
-\draw[->,>=latex,thick] ([xshift=-30mm]total_fluxes_norm.north) -- ([xshift=-25mm]species.south);
+\draw[->,>=latex,thick] ([xshift=-34.5mm]total_fluxes_norm.north) -- ([xshift=-25mm]species.south);
 \draw[->,>=latex,thick] (fluxes_norm) -| ([xshift=-25mm]species.south);
 \draw[->,>=latex,thick] ([yshift=30mm]fluxes_norm) -| ([xshift=-25mm]eigenmode.south east);
 \draw[->,>=latex,thick] ([xshift=-25mm]moments_norm_rotating_frame.north east) -- ([xshift=-25mm]eigenmode.south east);
