@@ -96,22 +96,22 @@ class Ids_properties(BaseModel):
         model_dict['model'] = model_to_dict(model, exclude=[Model.id, Model.ids_properties_id])
         model_dict['species_all'] = model_to_dict(self.species_all.get(), exclude=[Species_all.id, Species_all.ids_properties_id, Species_all.zeff])
         model_dict['species'] = []
-        model_dict['total_fluxes_norm'] = []
+        model_dict['fluxes_integrated_norm'] = []
         for species in self.species.order_by(Species.id):
             model_dict['species'].append(
                 model_to_dict(species,
                               recurse=False,
                               exclude=[Species.id, Species.ids_properties_id]))
-            sel = (Total_fluxes_norm.select()
-                   .where(Total_fluxes_norm.ids_properties_id == self.id)
-                   .where(Total_fluxes_norm.species_id == species.id)
+            sel = (Fluxes_integrated_norm.select()
+                   .where(Fluxes_integrated_norm.ids_properties_id == self.id)
+                   .where(Fluxes_integrated_norm.species_id == species.id)
                    )
             if sel.count() == 1:
                 totflux = model_to_dict(sel.get(),
                               recurse=False,
-                              exclude=[Total_fluxes_norm.ids_properties_id,
-                                       Total_fluxes_norm.species_id])
-                model_dict['total_fluxes_norm'].append(totflux)
+                              exclude=[Fluxes_integrated_norm.ids_properties_id,
+                                       Fluxes_integrated_norm.species_id])
+                model_dict['fluxes_integrated_norm'].append(totflux)
 
         sel = (Ids_properties.select(Collisions)
                .join(Species)
@@ -252,16 +252,16 @@ class Ids_properties(BaseModel):
                             entry.species = specieses[sp_idx]
                             entry.eigenmode = eig
                             entry.save(force_insert=True)
-            if len(model_dict['total_fluxes_norm']) != 0:
+            if len(model_dict['fluxes_integrated_norm']) != 0:
                 # Add check! Only if non-linear!
-                for sp_idx, sp_entry in enumerate(model_dict.pop('total_fluxes_norm')):
+                for sp_idx, sp_entry in enumerate(model_dict.pop('fluxes_integrated_norm')):
                     # Check if all NaNs, don't create entry. Check if true for all species!
                     entry = dict_to_model(table, sp_entry)
                     entry.species = specieses[sp_idx]
                     entry.ids_properties = ids_properties
                     entry.save(force_insert=True)
             else:
-                del model_dict['total_fluxes_norm']
+                del model_dict['fluxes_integrated_norm']
 
         if len(model_dict) != 0:
             warn('Could not read full model_dict! Ignoring {!s}'.format(model_dict.keys()))
@@ -305,6 +305,8 @@ class Model(BaseModel):
 
     # Optional
     time_interval_norm = ArrayField(FloatField, null=True)
+    # Only when include_b_field_parallel = False
+    inconsistent_curvature_drift = BooleanField(null=True)
 
 class Flux_surface(BaseModel):
     ids_properties = ForeignKeyField(Ids_properties, related_name='flux_surface')
@@ -356,7 +358,7 @@ class Eigenmode(BaseModel):
     a_field_parallel_perturbed_norm_imaginary = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel vector potential perturbations (imaginary part)')
     b_field_parallel_perturbed_norm_real = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel magnetic field perturbations (real part)')
     b_field_parallel_perturbed_norm_imaginary = ArrayField(FloatField, null=True, help_text='Parallel structure of the parallel magnetic field perturbations (imaginary part)')
-    poloidal_angle_grid = ArrayField(FloatField, help_text='Poloidal angle grid used to specify the parallel structure of the fields (eigenvectors)')
+    poloidal_angle = ArrayField(FloatField, help_text='Poloidal angle grid used to specify the parallel structure of the fields (eigenvectors)')
 
     # Derived quantities
     phi_potential_perturbed_weight = FloatField(null=True, help_text='Relative amplitude of the electrostatic potential perturbations. Computed internally from the parallel structure of the fields (eigenvectors)')
@@ -393,42 +395,48 @@ class Fluxes_norm(BaseModel):
     # *_b_parallel is Null if include_b_field_parallel is False
     species = ForeignKeyField(Species, related_name='fluxes')
     eigenmode = ForeignKeyField(Eigenmode, related_name='fluxes')
-    particle_flux_phi_potential = FloatField(help_text='Gyrocenter particle flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
-    particle_flux_a_field_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
-    particle_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
-    momentum_flux_phi_potential = FloatField(help_text='Gyrocenter momentum flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
-    momentum_flux_a_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
-    momentum_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
-    energy_flux_phi_potential = FloatField(help_text='Gyrocenter energy flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
-    energy_flux_a_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
-    energy_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
+    particles_phi_potential = FloatField(help_text='Gyrocenter particle flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
+    particles_a_field_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    particles_b_field_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
+    momentum_tor_parallel_phi_potential = FloatField(help_text='Gyrocenter momentum flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
+    momentum_tor_parallel_a_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    momentum_tor_parallel_b_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
+    momentum_tor_perpendicular_phi_potential = FloatField(help_text='Gyrocenter momentum flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
+    momentum_tor_perpendicular_a_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    momentum_tor_perpendicular_b_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
+    energy_phi_potential = FloatField(help_text='Gyrocenter energy flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
+    energy_a_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    energy_b_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
     class Meta:
         primary_key = CompositeKey('species', 'eigenmode')
 
 
-class Total_fluxes_norm(BaseModel):
+class Fluxes_integrated_norm(BaseModel):
     # Total fluxes not defined for linear runs
     # *_a_parallel is Null if include_a_field_parallel is False
     # *_b_parallel is Null if include_b_field_parallel is False
-    species = ForeignKeyField(Species, related_name='total_fluxes')
-    ids_properties = ForeignKeyField(Ids_properties, related_name='total_fluxes')
-    particle_flux_phi_potential = FloatField(help_text='Gyrocenter particle flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
-    particle_flux_a_field_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
-    particle_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
-    momentum_flux_phi_potential = FloatField(help_text='Gyrocenter momentum flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
-    momentum_flux_a_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
-    momentum_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
-    energy_flux_phi_potential = FloatField(help_text='Gyrocenter energy flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
-    energy_flux_a_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
-    energy_flux_b_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
+    species = ForeignKeyField(Species, related_name='fluxes_integrated_norm')
+    ids_properties = ForeignKeyField(Ids_properties, related_name='fluxes_integrated_norm')
+    particles_phi_potential = FloatField(help_text='Gyrocenter particle flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
+    particles_a_field_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    particles_b_field_parallel = FloatField(null=True, help_text='Gyrocenter particle flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
+    momentum_tor_parallel_phi_potential = FloatField(help_text='Gyrocenter momentum flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
+    momentum_tor_parallel_a_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    momentum_tor_parallel_b_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
+    momentum_tor_perpendicular_phi_potential = FloatField(help_text='Gyrocenter momentum flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
+    momentum_tor_perpendicular_a_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    momentum_tor_perpendicular_b_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
+    energy_phi_potential = FloatField(help_text='Gyrocenter energy flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
+    energy_a_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
+    energy_b_field_parallel = FloatField(null=True, help_text='Gyrocenter energy flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
     class Meta:
         primary_key = CompositeKey('species', 'ids_properties')
 
 
 class Moments_norm_rotating_frame(BaseModel):
     # Always optional
-    species = ForeignKeyField(Species, related_name='moments_rotating')
-    eigenmode = ForeignKeyField(Eigenmode, related_name='moments_rotating')
+    species = ForeignKeyField(Species, related_name='moments_norm_rotating_frame')
+    eigenmode = ForeignKeyField(Eigenmode, related_name='moments_norm_rotating_frame')
     density_real = ArrayField(FloatField,help_text='Real part of the density moment of the gyrocenter distribution function in the rotating frame')
     density_imaginary = ArrayField(FloatField,help_text='Imaginary part of the density moment of the gyrocenter distribution function in the rotating frame')
     velocity_parallel_real = ArrayField(FloatField,help_text='Real part of the parallel velocity  moment of the gyrocenter distribution function in the rotating frame')
@@ -457,7 +465,7 @@ def purge_tables():
             except ProgrammingError:
                 db.rollback()
     db.execute_sql('SET ROLE developer')
-    db.create_tables([Tag, Ids_properties, Ids_properties_tag, Code, Model, Collisions, Flux_surface, Wavevector, Eigenmode, Species, Fluxes_norm, Total_fluxes_norm, Moments_norm_rotating_frame, Species_all])
+    db.create_tables([Tag, Ids_properties, Ids_properties_tag, Code, Model, Collisions, Flux_surface, Wavevector, Eigenmode, Species, Fluxes_norm, Fluxes_integrated_norm, Moments_norm_rotating_frame, Species_all])
 
 if __name__ == '__main__':
     embed()

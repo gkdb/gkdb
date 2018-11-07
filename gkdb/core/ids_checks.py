@@ -32,6 +32,7 @@ def check_ids_entry(ids, on_disallowance='raise_at_end'):
     allow_entry &= check_wrapper(check_poloidal_angle_grid_bounds, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_poloidal_angle_grid_lengths, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_phi_rotation, ids, errors, on_disallowance=on_disallowance)
+    allow_entry &= check_wrapper(check_inconsistent_curvature_drift, ids, errors, on_disallowance=on_disallowance)
     if not allow_entry:
         if on_disallowance == 'raise_at_end':
             raise Exception(msg(errors))
@@ -202,4 +203,17 @@ def check_poloidal_angle_grid_lengths(ids, errors):
                     if len(val) != len(grid) and field not in ['moments_norm_rotating_frame', 'fluxes_norm']:
                         allow_entry = False
                         errors.append('Field {!s} for wavevector {!s} eigenmode {!s} same length as poloidal_grid'.format(field, ii, jj))
+    return allow_entry
+
+def check_inconsistent_curvature_drift(ids, errors):
+    allow_entry = True
+    ids['model']['include_b_field_parallel']
+    if 'inconsistent_curvature_drift' in ids['model']:
+        if 'include_b_field_parallel' in ids['model']:
+            if ids['model']['include_b_field_parallel']:
+                allow_entry = False
+                errors.append('inconsistent_curvature_drift can only be defined if include_b_field_parallel is False.')
+        else:
+            allow_entry = False
+            errors.append('inconsistent_curvature_drift can only be defined if include_b_field_parallel is defined and False.')
     return allow_entry
