@@ -123,7 +123,7 @@ ids\_properties\_id & integer \\
 \hyperref[sec:shape:coefficients]{shape\_coefficients\_c} &  array $(N_{sh}+1) \times 1$  \\
 \hyperref[sec:shape:coefficients]{shape\_coefficients\_c} &  array $N_{sh} \times 1$  \\
 \hyperref[sec:shape:coefficients]{dc\_dr\_minor\_norm} &  array $(N_{sh}+1) \times 1$  \\
-\hyperref[sec:shape:coefficients]{dc\_dr\_minor\_norm} &  array $N_{sh} \times 1$  \\
+\hyperref[sec:shape:coefficients]{ds\_dr\_minor\_norm} &  array $N_{sh} \times 1$  \\
 \hyperref[sec:shape]{elongation} &  real  \\
 \hyperref[sec:shape]{triangularity\_upper} &  real  \\
 \hyperref[sec:shape]{triangularity\_lower} &  real  \\
@@ -193,7 +193,7 @@ ids\_properties\_id & integer \\
 \hyperref[sec:temperature]{temperature\_norm} & real \\
 \hyperref[sec:dndr]{density\_log\_gradient\_norm} & real \\
 \hyperref[sec:dTdr]{temperature\_log\_gradient\_norm} & real \\
-\hyperref[sec:dvdr]{velocity\_toroidal\_gradient\_norm} & real \\
+\hyperref[sec:dvdr]{velocity\_tor\_gradient\_norm} & real \\
 \hline
 \end{tabularx}\\ 	
 };
@@ -411,7 +411,7 @@ $$\texttt{shearing\_rate\_norm}=\gamma_{E_N}=-\frac{L_\tref}{\vthref}\frac{1}{B_
 This input is only used in the database for non-linear runs (for linear runs, only $\gamma_{E_N}=0$ is allowed).
 \subsection{Parallel flow shear} \label{sec:dvdr}
 The parallel flow shear is assumed to arise entirely from the shear in a toroidal flow of constant angular frequency on a flux surface. The possibility to have a species dependent toroidal velocity gradient with $\omega_{\varphi,s}\neq \omega_\Phi$ is retained. Strictly speaking, this is inconsistent with the local limit assumption $\rho_*\rightarrow 0$ but can be interesting for the interpretation of tokamak experiments (see for instance the discussion in section II of \cite{Camenen:PoP2016}). The species dependent toroidal velocity gradient is then specified by: 
-$$\texttt{velocity\_toroidal\_gradient\_norm}=u'_{sN}=-\frac{L_\tref^2}{\vthref}\frac{\partial \omega_{\varphi,s}}{\partial r},$$
+$$\texttt{velocity\_tor\_gradient\_norm}=u'_{sN}=-\frac{L_\tref^2}{\vthref}\frac{\partial \omega_{\varphi,s}}{\partial r},$$
 that is positive for peaked profiles of a flow in the direction of $\nabla \varphi$.\\
 Note that in the strict application of the local limit, i.e. for $\omega_{\varphi,s}=\omega_\Phi$, one has:
 $$\gamma_{E_N}= - \frac{1}{2\pi L_\tref B_\tref}\frac{\partial \Psi}{\partial r} u'_{sN} = - \frac{RB_p}{L_\tref B_\tref} u'_{sN}$$
