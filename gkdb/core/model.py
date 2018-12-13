@@ -119,14 +119,15 @@ class Ids_properties(BaseModel):
                .order_by(Collisions.species1_id, Collisions.species2_id)
                )
         n_spec = len(model_dict['species'])
-        collisions = np.full([n_spec * n_spec, 3], np.NaN)
+        collisions_norm = np.full([n_spec * n_spec, 3], np.NaN)
         for ii, (species1, species2, coll) in enumerate(sel.tuples()):
-            collisions[ii, :] = (species1, species2, coll)
-        collisions = collisions.reshape(n_spec, n_spec, 3)
-        if np.any(np.isnan(collisions)):
+            collisions_norm[ii, :] = (species1, species2, coll)
+        collisions_norm = collisions_norm.reshape(n_spec, n_spec, 3)
+        if np.any(np.isnan(collisions_norm)):
             raise Exception('Could not read collisions table')
-        coll_list = collisions[:,:,-1].tolist()
-        model_dict['collisions'] = coll_list
+        coll_list = collisions_norm[:,:,-1].tolist()
+        model_dict['collisions'] = {}
+        model_dict['collisions']['collision_norm'] = coll_list
 
         model_dict['flux_surface'] = model_to_dict(self.flux_surface.get(),
                                                    recurse=False,
@@ -221,14 +222,17 @@ class Ids_properties(BaseModel):
 
             n_sp = len(specieses)
             collisions = model_dict.pop('collisions')
+            collisions_norm = collisions.pop('collisions_norm')
             for ii in range(n_sp):
                 for jj in range(n_sp):
                     entry_dict = {}
-                    for field, array in collisions.items():
+                    for field, array in collisions_norm.items():
                         entry_dict[field] = array[ii][jj]
                     Collisions.create(species1_id=specieses[ii],
                                       species2_id=specieses[jj],
                                       **entry_dict)
+            if len(collisions) != 0:
+                warn('Did not process whole collision field! Ignoring {!s}'.format(collision.keys()))
 
             for wv_idx, wavevector_dict in enumerate(model_dict.pop('wavevector')):
                 eigenmodes = wavevector_dict.pop('eigenmode')
@@ -377,7 +381,7 @@ class Species(BaseModel):
     temperature_norm = FloatField(help_text='Species temperature')
     density_log_gradient_norm = FloatField(help_text='Species logarithmic density gradient (with respect to r_minor)')
     temperature_log_gradient_norm = FloatField(help_text='Species logarithmic temperature gradient (with respect to r_minor)')
-    velocity_toroidal_gradient_norm = FloatField(help_text='Species toroidal velocity gradient (with respect to r_minor)')
+    velocity_tor_gradient_norm = FloatField(help_text='Species toroidal velocity gradient (with respect to r_minor)')
 
 
 class Collisions(BaseModel):

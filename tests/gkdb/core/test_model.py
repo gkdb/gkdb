@@ -76,7 +76,7 @@ def gen_default_dicts():
             temperature_norm=1.1764706,
             density_log_gradient_norm=4,
             temperature_log_gradient_norm=8,
-            velocity_toroidal_gradient_norm=0,
+            velocity_tor_gradient_norm=0,
         ),
         'species_1': dict(
             charge_norm=-1,
@@ -85,7 +85,7 @@ def gen_default_dicts():
             temperature_norm=1,
             density_log_gradient_norm=4,
             temperature_log_gradient_norm=6,
-            velocity_toroidal_gradient_norm=0,
+            velocity_tor_gradient_norm=0,
         ),
         'fluxes_norm': dict(
             energy_phi_potential=1,
@@ -336,6 +336,9 @@ def ids_properties_linear(default_dicts):
 
 def ids_properties_nonlinear(default_dicts, eigenmodes=True):
     default_dicts['species_all']['shearing_rate_norm'] = 1
+    default_dicts['eigenmode']['growth_rate_norm'] = None
+    default_dicts['eigenmode']['frequency_norm'] = None
+    default_dicts['eigenmode']['growth_rate_tolerance'] = None
     ids = Ids_properties.create(**default_dicts['ids_properties'])
     Flux_surface.create(
         ids_properties=ids,
