@@ -28,8 +28,8 @@ disp('4) filter out points with growth_rate_tolerance too large')
 
 
 %return
-endianness='b'; % Turing
-%endianness='l'; % Others
+%endianness='b'; % Turing
+endianness='l'; % Others
 
 % defaults
 if ~exist('flnm')||isempty(flnm)
@@ -218,12 +218,12 @@ for iN=1:Nout % loop over output files
  out{iN}.flux_surface.b_field_tor_sign = -sb_gkw;
  out{iN}.flux_surface.ip_sign = -sj_gkw;
  out{iN}.flux_surface.pressure_gradient_norm  = -beta_pr_gkw.*Brat.^2./Rrat;
- out{iN}.flux_surface.shape_coefficients_c  = c;
- out{iN}.flux_surface.shape_coefficients_s  = s;
- out{iN}.flux_surface.dc_dr_minor_norm  = c_pr;
- out{iN}.flux_surface.ds_dr_minor_norm  = s_pr;
+ out{iN}.flux_surface.shape_coefficients_c  = transpose(c);
+ out{iN}.flux_surface.shape_coefficients_s  = transpose(s);
+ out{iN}.flux_surface.dc_dr_minor_norm  = transpose(c_pr);
+ out{iN}.flux_surface.ds_dr_minor_norm  = transpose(s_pr);
 
- out{iN}.model.inconsistent_curvature_drift=0; % option not allowed for GKW
+ out{iN}.model.inconsistent_curvature_drift=false; % option not allowed for GKW
 
  %%%% Species parameters %%%%
 
@@ -266,14 +266,14 @@ for iN=1:Nout % loop over output files
    out{iN}.species{jj}.temperature_norm = G{ii}.SPECIES(jj).temp.*Trat;
    out{iN}.species{jj}.density_log_gradient_norm = G{ii}.SPECIES(jj).rln./Rrat;
    out{iN}.species{jj}.temperature_log_gradient_norm = G{ii}.SPECIES(jj).rlt./Rrat;
-   out{iN}.species{jj}.velocity_toroidal_gradient_norm = G{ii}.SPECIES(jj).uprim.*sb_gkw.*vthrat./Rrat.^2;
+   out{iN}.species{jj}.velocity_tor_gradient_norm = G{ii}.SPECIES(jj).uprim.*sb_gkw.*vthrat./Rrat.^2;
  end
 
  out{iN}.species_all.velocity_tor_norm = G{ii}.ROTATION.vcor.*sb_gkw.*vthrat./Rrat;
 
  %%% Type of run %%%
  if strcmp(upper(G{ii}.CONTROL.method),'EXP')
-  out{iN}.model.initial_value_run=1;
+  out{iN}.model.initial_value_run=true;
   nb_eiv=1;
  else
   is_ok(ii)=0;
@@ -281,9 +281,9 @@ for iN=1:Nout % loop over output files
   continue
  end
  if G{ii}.CONTROL.non_linear==0
-  out{iN}.model.non_linear_run=0;
+  out{iN}.model.non_linear_run=false;
   out{iN}.model.time_interval_norm='null';
-  out{iN}.model.shearing_rate_norm='null';
+  out{iN}.species_all.shearing_rate_norm='null';
  else
   is_ok(ii)=0;
   ok_msg{ii}='Non linear runs not handled yet';
@@ -315,10 +315,10 @@ for iN=1:Nout % loop over output files
  eV = 1.6022e-19; % elementary charge
  eps0= 8.8541878176e-12; % vacuum permittivity
  if G{ii}.CONTROL.collisions==0
-  out{iN}.model.collisions_pitch_only=0;
-  out{iN}.model.collisions_finite_larmor_radius=0;
-  out{iN}.model.collisions_momentum_conservation=1;
-  out{iN}.model.collisions_energy_conservation=1;
+  out{iN}.model.collisions_pitch_only=false;
+  out{iN}.model.collisions_finite_larmor_radius=false;
+  out{iN}.model.collisions_momentum_conservation=true;
+  out{iN}.model.collisions_energy_conservation=true;
   out{iN}.collisions.collisionality_norm = zeros(nsp,nsp);
  else
   if G{ii}.COLLISIONS.freq_override==0
@@ -352,7 +352,7 @@ for iN=1:Nout % loop over output files
   end
 
   out{iN}.model.collisions_pitch_only=(G{ii}.COLLISIONS.pitch_angle==1) & (G{ii}.COLLISIONS.en_scatter~=1 & G{ii}.COLLISIONS.friction_coll~=1);
-  out{iN}.model.collisions_finite_larmor_radius=0;
+  out{iN}.model.collisions_finite_larmor_radius=false;
   out{iN}.model.collisions_momentum_conservation=(G{ii}.COLLISIONS.mom_conservation==1);
   out{iN}.model.collisions_energy_conservation=(G{ii}.COLLISIONS.ene_conservation==1);
 
@@ -397,7 +397,7 @@ for iN=1:Nout % loop over output files
  
  if (G{ii}.ROTATION.cf_trap==1)|(G{ii}.ROTATION.cf_drift==1)
   if ((G{ii}.ROTATION.cf_trap+G{ii}.ROTATION.cf_drift+G{ii}.ROTATION.cf_upphi+G{ii}.ROTATION.cf_upsrc)==4)
-    out{iN}.model.include_centrifugal_effects = 1;
+    out{iN}.model.include_centrifugal_effects = true;
     flpth_cfdens=gkwpath('cfdens',proj);
     cfdens=load([flpth_cfdens flist{ii}]);
     Imid = find(Ggeom{ii}.s_grid>-0.5 & Ggeom{ii}.s_grid<0.5 & Ggeom{ii}.r.*Rrat>1);    
@@ -607,22 +607,22 @@ disp('warning, need to solve the growth rate tolerance issue')
  
    dims_fl = size(pflux.es); 
    dum=reshape(pflux.es,[],dims_fl(end));
-   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.particle_phi_potential = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.particles_phi_potential = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
    dum=reshape(pflux.em,[],dims_fl(end));
-   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.particle_a_field_parallel = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.particles_a_field_parallel = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
    dum=reshape(pflux.bpar,[],dims_fl(end));
-   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.particle_b_field_parallel = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.particles_b_field_parallel = dum(ii,jj).*pflux_norm_base.*pflux_norm_sp;
 
    dims_fl = size(vflux.eslab); 
    dum=reshape(vflux.eslab,[],dims_fl(end));
    out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_tor_parallel_phi_potential = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
-   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_tor_perpendicular_phi_potential = [];
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_tor_perpendicular_phi_potential = 'null';
    dum=reshape(vflux.emlab,[],dims_fl(end));
    out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_tor_parallel_a_field_parallel = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
-   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_tor_perpendicular_a_field_parallel = [];
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_tor_perpendicular_a_field_parallel = 'null';
    dum=reshape(vflux.bparlab,[],dims_fl(end));
    out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_tor_parallel_b_field_parallel = dum(ii,jj).*vflux_norm_base.*vflux_norm_sp;
-   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_tor_perpendicular_b_field_parallel = [];
+   out{iN}.wavevector{jN}.eigenmode{kk}.fluxes_norm{jj}.momentum_tor_perpendicular_b_field_parallel = 'null';
 
    dims_fl = size(eflux.eslab); 
    dum=reshape(eflux.eslab,[],dims_fl(end));

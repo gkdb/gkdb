@@ -55,7 +55,11 @@ for ii=1:length(field_names)
  else
    % write string or array
    if ischar(sub_data)
-     str = [str '"' sub_data '"'];
+     if strcmpi('null',sub_data)
+      str = [str sub_data];
+     else
+      str = [str '"' sub_data '"'];
+     end
    elseif isnumeric(sub_data)
      S=size(sub_data);
      if prod(S)==1  % no brackets for single elements
