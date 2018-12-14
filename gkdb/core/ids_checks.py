@@ -31,7 +31,7 @@ def check_ids_entry(ids, on_disallowance='raise_at_end'):
     allow_entry &= check_wrapper(check_magnetic_flutter, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_magnetic_compression, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_number_of_modes, ids, errors, on_disallowance=on_disallowance)
-    allow_entry &= check_wrapper(check_growth_rate_tolerance, ids, errors, on_disallowance=on_disallowance)
+    #allow_entry &= check_wrapper(check_growth_rate_tolerance, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_poloidal_angle_grid_bounds, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_poloidal_angle_grid_lengths, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_phi_rotation, ids, errors, on_disallowance=on_disallowance)
@@ -42,7 +42,6 @@ def check_ids_entry(ids, on_disallowance='raise_at_end'):
             raise Exception(msg(errors))
         elif on_disallowance == 'print_at_end':
             print(msg(errors))
-    print(allow_entry)
     return allow_entry
 
 def check_code_allowed(ids, errors):
