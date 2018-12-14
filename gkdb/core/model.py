@@ -127,7 +127,7 @@ class Ids_properties(BaseModel):
             raise Exception('Could not read collisions table')
         coll_list = collisions_norm[:,:,-1].tolist()
         model_dict['collisions'] = {}
-        model_dict['collisions']['collision_norm'] = coll_list
+        model_dict['collisions']['collisionality_norm'] = coll_list
 
         model_dict['flux_surface'] = model_to_dict(self.flux_surface.get(),
                                                    recurse=False,
@@ -222,17 +222,14 @@ class Ids_properties(BaseModel):
 
             n_sp = len(specieses)
             collisions = model_dict.pop('collisions')
-            collisions_norm = collisions.pop('collisions_norm')
             for ii in range(n_sp):
                 for jj in range(n_sp):
                     entry_dict = {}
-                    for field, array in collisions_norm.items():
+                    for field, array in collisions.items():
                         entry_dict[field] = array[ii][jj]
                     Collisions.create(species1_id=specieses[ii],
                                       species2_id=specieses[jj],
                                       **entry_dict)
-            if len(collisions) != 0:
-                warn('Did not process whole collision field! Ignoring {!s}'.format(collision.keys()))
 
             for wv_idx, wavevector_dict in enumerate(model_dict.pop('wavevector')):
                 eigenmodes = wavevector_dict.pop('eigenmode')
@@ -307,10 +304,11 @@ class Model(BaseModel):
     initial_value_run = BooleanField(help_text='True if the run was an initial value run. False if it was an eigenvalue run. Always 1 for non-linear run.')
     non_linear_run = BooleanField()
 
+    # Must be False if include_b_field_parallel = False
+    inconsistent_curvature_drift = BooleanField()
+
     # Optional
     time_interval_norm = ArrayField(FloatField, null=True)
-    # Only when include_b_field_parallel = False
-    inconsistent_curvature_drift = BooleanField(null=True)
 
 class Flux_surface(BaseModel):
     ids_properties = ForeignKeyField(Ids_properties, related_name='flux_surface')
@@ -405,7 +403,7 @@ class Fluxes_norm(BaseModel):
     momentum_tor_parallel_phi_potential = FloatField(help_text='Gyrocenter momentum flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
     momentum_tor_parallel_a_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
     momentum_tor_parallel_b_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
-    momentum_tor_perpendicular_phi_potential = FloatField(help_text='Gyrocenter momentum flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
+    momentum_tor_perpendicular_phi_potential = FloatField(null=True, help_text='Gyrocenter momentum flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')
     momentum_tor_perpendicular_a_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel vector potential fluctuations (magnetic flutter). Identical in the Laboratory and rotating frames')
     momentum_tor_perpendicular_b_field_parallel = FloatField(null=True, help_text='Gyrocenter momentum flux due to the parallel magnetic field fluctuations (magnetic compression). Identical in the Laboratory and rotating frames')
     energy_phi_potential = FloatField(help_text='Gyrocenter energy flux due to the electrostatic potential fluctuations. Identical in the Laboratory and rotating frames')

@@ -34,7 +34,7 @@ def gen_default_dicts():
             collisions_finite_larmor_radius=False,
             initial_value_run=False,
             non_linear_run=False,
-            inconsistent_curvature_drift=None,
+            inconsistent_curvature_drift=False,
         ),
         'flux_surface': dict(
             r_minor_norm=0.16,

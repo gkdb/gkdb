@@ -5,6 +5,8 @@ import scipy as sc
 from scipy.interpolate import interp1d
 from IPython import embed
 
+from gkdb.core.equilibrium import get_values_min_max_consistency_check, calculate_a_N
+
 allowed_codes = ['GKW', 'GENE', 'test']
 error_msg = lambda errors: 'Entry does not meet GKDB definition: {!s}'.format(errors)
 
@@ -25,20 +27,21 @@ def check_ids_entry(ids, on_disallowance='raise_at_end'):
     allow_entry &= check_wrapper(check_code_allowed, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_electron_definition, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_quasineutrality, ids, errors, on_disallowance=on_disallowance)
+    allow_entry &= check_wrapper(check_centrifugal, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_magnetic_flutter, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_magnetic_compression, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_number_of_modes, ids, errors, on_disallowance=on_disallowance)
-    allow_entry &= check_wrapper(check_growth_rate_tolerance, ids, errors, on_disallowance=on_disallowance)
+    #allow_entry &= check_wrapper(check_growth_rate_tolerance, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_poloidal_angle_grid_bounds, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_poloidal_angle_grid_lengths, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_phi_rotation, ids, errors, on_disallowance=on_disallowance)
+    allow_entry &= check_wrapper(check_r_minor_norm_shape_consistency, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_inconsistent_curvature_drift, ids, errors, on_disallowance=on_disallowance)
     if not allow_entry:
         if on_disallowance == 'raise_at_end':
             raise Exception(msg(errors))
         elif on_disallowance == 'print_at_end':
             print(msg(errors))
-    print(allow_entry)
     return allow_entry
 
 def check_code_allowed(ids, errors):
@@ -71,9 +74,9 @@ def check_quasineutrality(ids, errors):
     allow_entry = True
     Zs = [spec['charge_norm'] for spec in ids['species']]
     ns = [spec['density_norm'] for spec in ids['species']]
-    Lns = [spec['density_log_gradient_norm'] for spec in ids['species']]
+    RLns = [spec['density_log_gradient_norm'] for spec in ids['species']]
     quasi = np.isclose(sum([Z * n for Z, n in zip(Zs, ns)]), 0)
-    quasi_grad = np.isclose(sum([Z * n/ Ln if Ln != 0 else np.inf for Z, n, Ln in zip(Zs, ns, Lns)]), 0)
+    quasi_grad = np.isclose(sum([Z * n * RLn for Z, n, RLn in zip(Zs, ns, RLns)]), 0)
     if not quasi:
         allow_entry = False
         errors.append("Entry is not quasineutral! Zn = {!s} and ns = {!s}".format(Zs, ns))
@@ -81,6 +84,18 @@ def check_quasineutrality(ids, errors):
         allow_entry = False
         errors.append("Entry is not quasineutral for gradients! Zn = {!s}, ns = {!s} and Lns = {!s}".format(Zs, ns, Lns))
 
+    return allow_entry
+
+def check_centrifugal(ids, errors):
+    allow_entry = True
+    u_N = ids['species_all']['velocity_tor_norm']
+    ms = [spec['mass_norm'] for spec in ids['species']]
+    Ts = [spec['temperature_norm'] for spec in ids['species']]
+    Mach = u_N * np.sqrt([m / T for m, T in zip(ms, Ts)])
+    Mach_bound = 0.2
+    if any(Mach > Mach_bound) and not ids['model']['include_centrifugal_effects']:
+        allow_entry = False
+        errors.append('Species with Mach > {!s} and include_centrifugal_effects is False.'.format(Mach_bound))
     return allow_entry
 
 def check_magnetic_flutter(ids, errors):
@@ -159,7 +174,7 @@ def check_monoticity(ids, errors):
     allow_entry = True
     for ii, wv in enumerate(ids['wavevector']):
         for jj, eig in enumerate(wv['eigenmode']):
-            grid = eig['poloidal_angle_grid']
+            grid = eig['poloidal_angle']
             if not is_monotonic(grid):
                 allow_entry = False
                 errors.append('Poloidal angel grid should be monotonically increasing. For wavevector {!s} eigenmode {!s} it is not'.format(ii, jj))
@@ -171,7 +186,7 @@ def check_poloidal_angle_grid_bounds(ids, errors):
     for ii, wv in enumerate(ids['wavevector']):
         for jj, eig in enumerate(wv['eigenmode']):
             if not non_linear_run:
-                grid = eig['poloidal_angle_grid']
+                grid = eig['poloidal_angle']
                 poloidal_turns = wv['poloidal_turns']
                 if not all([(el >= -poloidal_turns * np.pi) and el <= poloidal_turns * np.pi for el in grid]):
                     allow_entry = False
@@ -182,7 +197,7 @@ def check_phi_rotation(ids, errors):
     allow_entry = True
     for ii, wv in enumerate(ids['wavevector']):
         for jj, eig in enumerate(wv['eigenmode']):
-            grid = eig['poloidal_angle_grid']
+            grid = eig['poloidal_angle']
             if 'phi_potential_perturbed_norm_imaginary' in eig:
                 if not check_moment_rotation(grid, eig['phi_potential_perturbed_norm_imaginary'], 1e-3):
                     allow_entry = False
@@ -194,7 +209,7 @@ def check_poloidal_angle_grid_lengths(ids, errors):
     non_linear_run = ids['model']['non_linear_run']
     for ii, wv in enumerate(ids['wavevector']):
         for jj, eig in enumerate(wv['eigenmode']):
-            grid = eig['poloidal_angle_grid']
+            grid = eig['poloidal_angle']
             check_arrays_in = eig.items()
             if 'moments_norm_rotating_frame' in eig:
                 check_arrays_in = chain(check_arrays_in, *[mom.items() for mom in eig['moments_norm_rotating_frame']])
@@ -205,15 +220,41 @@ def check_poloidal_angle_grid_lengths(ids, errors):
                         errors.append('Field {!s} for wavevector {!s} eigenmode {!s} same length as poloidal_grid'.format(field, ii, jj))
     return allow_entry
 
+def check_r_minor_norm_shape_consistency(ids, errors):
+    allow_entry = True
+    s_n = ids['flux_surface']['shape_coefficients_s']
+    c_n = ids['flux_surface']['shape_coefficients_c']
+    dc_dr = ids['flux_surface']['dc_dr_minor_norm']
+    ds_dr = ids['flux_surface']['ds_dr_minor_norm']
+
+    if not isinstance(s_n[0], (float, int)):
+        allow_entry = False
+        errors.append('Shape parameters should be a 1D array!')
+        return allow_entry
+
+    N_sh = len(s_n)
+    for param in [s_n, c_n, dc_dr, ds_dr]:
+        if len(param) != N_sh:
+            allow_entry = False
+            errors.append('Plasma shape parameters have inconsistent lenghts')
+            return allow_entry
+    theta = np.linspace(0, 2 * np.pi)
+    n = np.arange(0, N_sh)
+    a_N = calculate_a_N(theta, c_n, s_n)
+    r_N = ids['flux_surface']['r_minor_norm']
+    min_check, max_check, i_min_check, i_max_check = get_values_min_max_consistency_check(theta, a_N)
+    if not np.isclose(r_N, (max_check - min_check) / 2, rtol=1e-3):
+        print(r_N)
+        print((max_check - min_check) / 2)
+        allow_entry = False
+        errors.append('Given r_minor_norm is not consistent with the given shape coefficients')
+
+    return allow_entry
+
 def check_inconsistent_curvature_drift(ids, errors):
     allow_entry = True
-    ids['model']['include_b_field_parallel']
-    if 'inconsistent_curvature_drift' in ids['model']:
-        if 'include_b_field_parallel' in ids['model']:
-            if ids['model']['include_b_field_parallel']:
+    if ids['model']['include_b_field_parallel'] is True:
+        if ids['model']['inconsistent_curvature_drift'] is True:
                 allow_entry = False
-                errors.append('inconsistent_curvature_drift can only be defined if include_b_field_parallel is False.')
-        else:
-            allow_entry = False
-            errors.append('inconsistent_curvature_drift can only be defined if include_b_field_parallel is defined and False.')
+                errors.append('inconsistent_curvature_drift must be False if include_b_field_parallel is False.')
     return allow_entry
