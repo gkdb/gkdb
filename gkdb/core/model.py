@@ -304,10 +304,11 @@ class Model(BaseModel):
     initial_value_run = BooleanField(help_text='True if the run was an initial value run. False if it was an eigenvalue run. Always 1 for non-linear run.')
     non_linear_run = BooleanField()
 
+    # Must be False if include_b_field_parallel = False
+    inconsistent_curvature_drift = BooleanField()
+
     # Optional
     time_interval_norm = ArrayField(FloatField, null=True)
-    # Only when include_b_field_parallel = False
-    inconsistent_curvature_drift = BooleanField(null=True)
 
 class Flux_surface(BaseModel):
     ids_properties = ForeignKeyField(Ids_properties, related_name='flux_surface')
