@@ -5,12 +5,11 @@ import numpy as np
 from peewee import *
 from playhouse.postgres_ext import *
 
-db = PostgresqlExtDatabase(database='qlknn_test', register_hstore=True)
-db.execute_sql('CREATE SCHEMA IF NOT EXISTS develop;')
+db = PostgresqlExtDatabase(database='gkdb_test')
 db.execute_sql('CREATE EXTENSION IF NOT EXISTS hstore;')
+db.execute_sql('CREATE SCHEMA IF NOT EXISTS develop;')
 cur = db.execute_sql("SELECT rolname, rolsuper FROM pg_roles WHERE rolname = 'testuser';")
 if len(cur.fetchall()) == 0:
-    db.execute_sql('SET ROLE karel;')
     db.execute_sql('CREATE ROLE testuser;')
 
 class DatabaseTestCase(TestCase):
