@@ -71,9 +71,9 @@ def check_quasineutrality(ids, errors):
     allow_entry = True
     Zs = [spec['charge_norm'] for spec in ids['species']]
     ns = [spec['density_norm'] for spec in ids['species']]
-    Lns = [spec['density_log_gradient_norm'] for spec in ids['species']]
+    RLns = [spec['density_log_gradient_norm'] for spec in ids['species']]
     quasi = np.isclose(sum([Z * n for Z, n in zip(Zs, ns)]), 0)
-    quasi_grad = np.isclose(sum([Z * n/ Ln if Ln != 0 else np.inf for Z, n, Ln in zip(Zs, ns, Lns)]), 0)
+    quasi_grad = np.isclose(sum([Z * n * RLn for Z, n, RLn in zip(Zs, ns, RLns)]), 0)
     if not quasi:
         allow_entry = False
         errors.append("Entry is not quasineutral! Zn = {!s} and ns = {!s}".format(Zs, ns))
