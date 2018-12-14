@@ -25,6 +25,7 @@ def check_ids_entry(ids, on_disallowance='raise_at_end'):
     allow_entry &= check_wrapper(check_code_allowed, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_electron_definition, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_quasineutrality, ids, errors, on_disallowance=on_disallowance)
+    allow_entry &= check_wrapper(check_centrifugal, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_magnetic_flutter, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_magnetic_compression, ids, errors, on_disallowance=on_disallowance)
     allow_entry &= check_wrapper(check_number_of_modes, ids, errors, on_disallowance=on_disallowance)
@@ -81,6 +82,18 @@ def check_quasineutrality(ids, errors):
         allow_entry = False
         errors.append("Entry is not quasineutral for gradients! Zn = {!s}, ns = {!s} and Lns = {!s}".format(Zs, ns, Lns))
 
+    return allow_entry
+
+def check_centrifugal(ids, errors):
+    allow_entry = True
+    u_N = ids['species_all']['velocity_tor_norm']
+    ms = [spec['mass_norm'] for spec in ids['species']]
+    Ts = [spec['temperature_norm'] for spec in ids['species']]
+    Mach = u_N * np.sqrt([m / T for m, T in zip(ms, Ts)])
+    Mach_bound = 0.2
+    if any(Mach > Mach_bound) and not ids['model']['include_centrifugal_effects']:
+        allow_entry = False
+        errors.append('Species with Mach > {!s} and include_centrifugal_effects is False.'.format(Mach_bound))
     return allow_entry
 
 def check_magnetic_flutter(ids, errors):
