@@ -127,7 +127,7 @@ class Ids_properties(BaseModel):
             raise Exception('Could not read collisions table')
         coll_list = collisions_norm[:,:,-1].tolist()
         model_dict['collisions'] = {}
-        model_dict['collisions']['collision_norm'] = coll_list
+        model_dict['collisions']['collisionality_norm'] = coll_list
 
         model_dict['flux_surface'] = model_to_dict(self.flux_surface.get(),
                                                    recurse=False,
@@ -222,17 +222,14 @@ class Ids_properties(BaseModel):
 
             n_sp = len(specieses)
             collisions = model_dict.pop('collisions')
-            collisions_norm = collisions.pop('collisions_norm')
             for ii in range(n_sp):
                 for jj in range(n_sp):
                     entry_dict = {}
-                    for field, array in collisions_norm.items():
+                    for field, array in collisions.items():
                         entry_dict[field] = array[ii][jj]
                     Collisions.create(species1_id=specieses[ii],
                                       species2_id=specieses[jj],
                                       **entry_dict)
-            if len(collisions) != 0:
-                warn('Did not process whole collision field! Ignoring {!s}'.format(collision.keys()))
 
             for wv_idx, wavevector_dict in enumerate(model_dict.pop('wavevector')):
                 eigenmodes = wavevector_dict.pop('eigenmode')
