@@ -207,13 +207,8 @@ def check_poloidal_angle_grid_lengths(ids, errors):
 
 def check_inconsistent_curvature_drift(ids, errors):
     allow_entry = True
-    ids['model']['include_b_field_parallel']
-    if 'inconsistent_curvature_drift' in ids['model']:
-        if 'include_b_field_parallel' in ids['model']:
-            if ids['model']['include_b_field_parallel']:
+    if ids['model']['include_b_field_parallel'] is True:
+        if ids['model']['inconsistent_curvature_drift'] is True:
                 allow_entry = False
-                errors.append('inconsistent_curvature_drift can only be defined if include_b_field_parallel is False.')
-        else:
-            allow_entry = False
-            errors.append('inconsistent_curvature_drift can only be defined if include_b_field_parallel is defined and False.')
+                errors.append('inconsistent_curvature_drift must be False if include_b_field_parallel is False.')
     return allow_entry
