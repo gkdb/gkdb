@@ -159,7 +159,7 @@ def check_monoticity(ids, errors):
     allow_entry = True
     for ii, wv in enumerate(ids['wavevector']):
         for jj, eig in enumerate(wv['eigenmode']):
-            grid = eig['poloidal_angle_grid']
+            grid = eig['poloidal_angle']
             if not is_monotonic(grid):
                 allow_entry = False
                 errors.append('Poloidal angel grid should be monotonically increasing. For wavevector {!s} eigenmode {!s} it is not'.format(ii, jj))
@@ -171,7 +171,7 @@ def check_poloidal_angle_grid_bounds(ids, errors):
     for ii, wv in enumerate(ids['wavevector']):
         for jj, eig in enumerate(wv['eigenmode']):
             if not non_linear_run:
-                grid = eig['poloidal_angle_grid']
+                grid = eig['poloidal_angle']
                 poloidal_turns = wv['poloidal_turns']
                 if not all([(el >= -poloidal_turns * np.pi) and el <= poloidal_turns * np.pi for el in grid]):
                     allow_entry = False
@@ -182,7 +182,7 @@ def check_phi_rotation(ids, errors):
     allow_entry = True
     for ii, wv in enumerate(ids['wavevector']):
         for jj, eig in enumerate(wv['eigenmode']):
-            grid = eig['poloidal_angle_grid']
+            grid = eig['poloidal_angle']
             if 'phi_potential_perturbed_norm_imaginary' in eig:
                 if not check_moment_rotation(grid, eig['phi_potential_perturbed_norm_imaginary'], 1e-3):
                     allow_entry = False
@@ -194,7 +194,7 @@ def check_poloidal_angle_grid_lengths(ids, errors):
     non_linear_run = ids['model']['non_linear_run']
     for ii, wv in enumerate(ids['wavevector']):
         for jj, eig in enumerate(wv['eigenmode']):
-            grid = eig['poloidal_angle_grid']
+            grid = eig['poloidal_angle']
             check_arrays_in = eig.items()
             if 'moments_norm_rotating_frame' in eig:
                 check_arrays_in = chain(check_arrays_in, *[mom.items() for mom in eig['moments_norm_rotating_frame']])
