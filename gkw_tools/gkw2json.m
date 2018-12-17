@@ -418,7 +418,7 @@ for iN=1:Nout % loop over output files
     continue
   end
  else
-  out{iN}.model.include_centrifugal_effects = 0;  
+  out{iN}.model.include_centrifugal_effects = false;  
  end 
 
 
