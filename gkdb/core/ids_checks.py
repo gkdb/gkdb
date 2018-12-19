@@ -1,4 +1,5 @@
 from itertools import chain
+import json
 
 import numpy as np
 import scipy as sc
@@ -14,6 +15,12 @@ def check_wrapper(check_function, ids, errors, *args, on_disallowance=None, **kw
     allow_entry = check_function(ids, errors, *args, **kwargs)
     if on_disallowance == 'raise_immediately' and allow_entry is not True:
         raise Exception(error_msg(errors))
+    return allow_entry
+
+def check_json(json_path, on_disallowance='raise_at_end'):
+    with open(json_path) as file:
+        ids = json.load(file)
+    allow_entry = check_ids_entry(ids, on_disallowance=on_disallowance)
     return allow_entry
 
 def check_ids_entry(ids, on_disallowance='raise_at_end'):
