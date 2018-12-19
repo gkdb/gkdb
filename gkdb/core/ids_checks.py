@@ -5,7 +5,7 @@ import scipy as sc
 from scipy.interpolate import interp1d
 from IPython import embed
 
-from gkdb.core.equilibrium import get_values_min_max_consistency_check, calculate_a_N
+from gkdb.core.equilibrium import get_values_min_max_consistency_check, calculate_a_N, check_r_minor_norm_shape_consistency
 
 allowed_codes = ['GKW', 'GENE', 'test']
 error_msg = lambda errors: 'Entry does not meet GKDB definition: {!s}'.format(errors)
@@ -17,7 +17,7 @@ def check_wrapper(check_function, ids, errors, *args, on_disallowance=None, **kw
     return allow_entry
 
 def check_ids_entry(ids, on_disallowance='raise_at_end'):
-    on_disallowance = 'raise_immediately'
+    on_disallowance = 'raise_at_end'
     if on_disallowance not in ['raise_immediately', 'raise_at_end', 'print_at_end']:
         raise Exception
     allow_entry = True
@@ -39,9 +39,9 @@ def check_ids_entry(ids, on_disallowance='raise_at_end'):
     allow_entry &= check_wrapper(check_inconsistent_curvature_drift, ids, errors, on_disallowance=on_disallowance)
     if not allow_entry:
         if on_disallowance == 'raise_at_end':
-            raise Exception(msg(errors))
+            raise Exception(error_msg(errors))
         elif on_disallowance == 'print_at_end':
-            print(msg(errors))
+            print(error_msg(errors))
     return allow_entry
 
 def check_code_allowed(ids, errors):
@@ -218,37 +218,6 @@ def check_poloidal_angle_grid_lengths(ids, errors):
                     if len(val) != len(grid) and field not in ['moments_norm_rotating_frame', 'fluxes_norm']:
                         allow_entry = False
                         errors.append('Field {!s} for wavevector {!s} eigenmode {!s} same length as poloidal_grid'.format(field, ii, jj))
-    return allow_entry
-
-def check_r_minor_norm_shape_consistency(ids, errors):
-    allow_entry = True
-    s_n = ids['flux_surface']['shape_coefficients_s']
-    c_n = ids['flux_surface']['shape_coefficients_c']
-    dc_dr = ids['flux_surface']['dc_dr_minor_norm']
-    ds_dr = ids['flux_surface']['ds_dr_minor_norm']
-
-    if not isinstance(s_n[0], (float, int)):
-        allow_entry = False
-        errors.append('Shape parameters should be a 1D array!')
-        return allow_entry
-
-    N_sh = len(s_n)
-    for param in [s_n, c_n, dc_dr, ds_dr]:
-        if len(param) != N_sh:
-            allow_entry = False
-            errors.append('Plasma shape parameters have inconsistent lenghts')
-            return allow_entry
-    theta = np.linspace(0, 2 * np.pi)
-    n = np.arange(0, N_sh)
-    a_N = calculate_a_N(theta, c_n, s_n)
-    r_N = ids['flux_surface']['r_minor_norm']
-    min_check, max_check, i_min_check, i_max_check = get_values_min_max_consistency_check(theta, a_N)
-    if not np.isclose(r_N, (max_check - min_check) / 2, rtol=1e-3):
-        print(r_N)
-        print((max_check - min_check) / 2)
-        allow_entry = False
-        errors.append('Given r_minor_norm is not consistent with the given shape coefficients')
-
     return allow_entry
 
 def check_inconsistent_curvature_drift(ids, errors):
