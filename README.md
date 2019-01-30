@@ -1,4 +1,7 @@
- # GKDB
+# GKDB PROJECT HAS MOVED TO GITLAB
+The GKDB project and related documentation has moved to https://gitlab.com/gkdb/gkdb. If you landed on this page by visiting gkdb.org, please clear your browser cache https://www.refreshyourcache.com. 
+
+# GKDB
 See the wiki for more information on the GyroKinetic DataBase (GKDB) project.
 
 <!--- The text below has been updated and moved to the wiki pages
